@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/felexe-acquirer-service/src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/felexe-acquirer-service/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/felexe-acquirer-service",
+  "projects": {
+    "dispute-mng": {
+      "type": "application",
+      "root": "apps/dispute-mng",
+      "entryFile": "main",
+      "sourceRoot": "apps/dispute-mng/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/dispute-mng/tsconfig.app.json"
+      }
+    },
+    "felexe-acquirer-service": {
+      "type": "application",
+      "root": "apps/felexe-acquirer-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/felexe-acquirer-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/felexe-acquirer-service/tsconfig.app.json"
+      }
+    },
+    "merchant-governace-service": {
+      "type": "application",
+      "root": "apps/merchant-governace-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/merchant-governace-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/merchant-governace-service/tsconfig.app.json"
+      }
+    },
+    "merchant-onboarding": {
+      "type": "application",
+      "root": "apps/merchant-onboarding",
+      "entryFile": "main",
+      "sourceRoot": "apps/merchant-onboarding/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/merchant-onboarding/tsconfig.app.json"
+      }
+    },
+    "mis-reports": {
+      "type": "application",
+      "root": "apps/mis-reports",
+      "entryFile": "main",
+      "sourceRoot": "apps/mis-reports/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/mis-reports/tsconfig.app.json"
+      }
+    },
+    "recon-mng": {
+      "type": "application",
+      "root": "apps/recon-mng",
+      "entryFile": "main",
+      "sourceRoot": "apps/recon-mng/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/recon-mng/tsconfig.app.json"
+      }
+    }
+  }
+}
