@@ -19,6 +19,7 @@
         "tsConfigPath": "apps/dispute-mng/tsconfig.app.json"
       }
     },
+
     "felexe-acquirer-service": {
       "type": "application",
       "root": "apps/felexe-acquirer-service",
