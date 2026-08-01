@@ -16,9 +16,10 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/v2/api (GET)', () => {
+    app.setGlobalPrefix('v2/api');
     return request(app.getHttpServer())
-      .get('/')
+      .get('/v2/api')
       .expect(200)
       .expect('Felexe Acquirer Gateway');
   });

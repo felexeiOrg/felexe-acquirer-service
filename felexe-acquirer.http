@@ -1,0 +1,104 @@
+@baseUrl = http://localhost:3000/v2/api
+@mobile = 9876543210
+@tempPassword = Admin@1234
+@otp = 000000
+@verificationToken = replace-after-verify-otp
+@newPassword = Secure@Pass1
+
+############################################################
+# ALL APIs in this one file
+# Language mode (bottom-right) must be HTTP
+# Click "Send Request" or press Cmd+Option+R
+############################################################
+
+### Gateway health
+GET {{baseUrl}}/
+
+### Auth - Register (temp password = FirstName + special + 4 digits)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "company_name": "Your Company Pvt Ltd",
+  "business_website": "https://example.com",
+  "company_type": "private_limited",
+  "first_name": "Admin",
+  "last_name": "User",
+  "mobile": "{{mobile}}",
+  "email": "admin@example.com"
+}
+
+### Auth - Login (mobile + password) -> returns OTP
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "mobile": "{{mobile}}",
+  "password": "{{tempPassword}}"
+}
+
+### Auth - Verify OTP (after login) -> returns verification_token + requires_password_update
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: application/json
+
+{
+  "mobile": "{{mobile}}",
+  "otp": "{{otp}}",
+  "purpose": "login"
+}
+
+### Auth - Update password (first login / after OTP)
+POST {{baseUrl}}/auth/update-password
+Content-Type: application/json
+
+{
+  "mobile": "{{mobile}}",
+  "verification_token": "{{verificationToken}}",
+  "new_password": "{{newPassword}}"
+}
+
+### Auth - Forgot password (send OTP to mobile)
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "mobile": "{{mobile}}"
+}
+
+### Auth - Verify OTP (forgot password)
+POST {{baseUrl}}/auth/verify-otp
+Content-Type: application/json
+
+{
+  "mobile": "{{mobile}}",
+  "otp": "{{otp}}",
+  "purpose": "forgot_password"
+}
+
+### Auth - Update password (forgot password reset)
+POST {{baseUrl}}/auth/update-password
+Content-Type: application/json
+
+{
+  "mobile": "{{mobile}}",
+  "verification_token": "{{verificationToken}}",
+  "new_password": "Reset@Pass9"
+}
+
+### Merchant Onboarding
+GET {{baseUrl}}/merchant-onboarding
+
+### Merchant Governance
+GET {{baseUrl}}/merchant-governace
+
+### Dispute Management
+GET {{baseUrl}}/dispute-mng
+
+### Recon Management
+GET {{baseUrl}}/recon-mng
+
+### MIS Reports
+GET {{baseUrl}}/mis-reports
+
+### KYC API Integration
+GET {{baseUrl}}/kyc-api-integration

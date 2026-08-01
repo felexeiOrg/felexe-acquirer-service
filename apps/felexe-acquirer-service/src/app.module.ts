@@ -1,8 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { AuditLog } from './auth/entities/audit-log.entity';
+import { OtpVerification } from './auth/entities/otp-verification.entity';
+import { User } from './auth/entities/user.entity';
 
 function resolveHost(
   configService: ConfigService,
@@ -21,6 +26,20 @@ function resolveHost(
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres' as const,
+        host: configService.getOrThrow<string>('DB_HOST'),
+        port: Number(configService.getOrThrow<string>('DB_PORT')),
+        username: configService.getOrThrow<string>('DB_USER'),
+        password: configService.getOrThrow<string>('DB_PASSWORD'),
+        database: configService.getOrThrow<string>('DB_NAME'),
+        entities: [User, OtpVerification, AuditLog],
+        synchronize: true,
+      }),
     }),
     ClientsModule.registerAsync([
       {
@@ -96,6 +115,7 @@ function resolveHost(
         }),
       },
     ]),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

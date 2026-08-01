@@ -1,0 +1,16 @@
+{
+  "editor.codeLens": true,
+  "[http]": {
+    "editor.codeLens": true
+  },
+  "files.associations": {
+    "*.http": "http"
+  },
+  "rest-client.enableSendRequestCodeLens": true,
+  "rest-client.previewResponseInUntitledDocument": true,
+  "rest-client.previewColumn": "beside",
+  "rest-client.previewOption": "full",
+  "rest-client.previewResponsePanelTakeFocus": true,
+  "rest-client.showResponseInDifferentTab": true,
+  "rest-client.requestNameAsResponseTabTitle": true
+}
