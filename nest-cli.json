@@ -28,6 +28,15 @@
         "tsConfigPath": "apps/felexe-acquirer-service/tsconfig.app.json"
       }
     },
+    "kyc-api-integration": {
+      "type": "application",
+      "root": "apps/kyc-api-integration",
+      "entryFile": "main",
+      "sourceRoot": "apps/kyc-api-integration/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/kyc-api-integration/tsconfig.app.json"
+      }
+    },
     "merchant-governace-service": {
       "type": "application",
       "root": "apps/merchant-governace-service",

@@ -19,6 +19,7 @@ describe('AppController', () => {
         { provide: 'DISPUTE_MNG_SERVICE', useValue: mockClientProxy },
         { provide: 'RECON_MNG_SERVICE', useValue: mockClientProxy },
         { provide: 'MIS_REPORTS_SERVICE', useValue: mockClientProxy },
+        { provide: 'KYC_API_INTEGRATION_SERVICE', useValue: mockClientProxy },
       ],
     }).compile();
 

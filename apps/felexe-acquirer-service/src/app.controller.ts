@@ -16,6 +16,8 @@ export class AppController {
     private readonly reconMngClient: ClientProxy,
     @Inject('MIS_REPORTS_SERVICE')
     private readonly misReportsClient: ClientProxy,
+    @Inject('KYC_API_INTEGRATION_SERVICE')
+    private readonly kycApiIntegrationClient: ClientProxy,
   ) {}
 
   @Get()
@@ -52,5 +54,13 @@ export class AppController {
   @Get('mis-reports')
   getMisReports() {
     return this.misReportsClient.send({ cmd: 'mis-reports.getHello' }, {});
+  }
+
+  @Get('kyc-api-integration')
+  getKycApiIntegration() {
+    return this.kycApiIntegrationClient.send(
+      { cmd: 'kyc-api-integration.getHello' },
+      {},
+    );
   }
 }

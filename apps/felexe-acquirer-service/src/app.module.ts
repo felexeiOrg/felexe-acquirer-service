@@ -83,6 +83,18 @@ function resolveHost(
           },
         }),
       },
+      {
+        name: 'KYC_API_INTEGRATION_SERVICE',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: resolveHost(configService, 'KYC_API_INTEGRATION_HOST'),
+            port: configService.get<number>('KYC_API_INTEGRATION_PORT', 3006),
+          },
+        }),
+      },
     ]),
   ],
   controllers: [AppController],
