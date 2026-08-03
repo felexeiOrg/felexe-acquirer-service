@@ -102,3 +102,94 @@ GET {{baseUrl}}/mis-reports
 
 ### KYC API Integration
 GET {{baseUrl}}/kyc-api-integration
+
+### KYC - Verify PAN
+POST {{baseUrl}}/kyc-api-integration/verifyPan
+Content-Type: application/json
+
+{
+  "pan": "FBDPP3655R"
+}
+
+### KYC - Initiate Aadhaar via DigiLocker
+POST {{baseUrl}}/kyc-api-integration/initiateAdharVerificationViaDigilocker
+Content-Type: application/json
+
+{
+  "aadhaar": "123456789012"
+}
+
+### KYC - Get Aadhaar verification status
+POST {{baseUrl}}/kyc-api-integration/getAdharVerificationStatus
+Content-Type: application/json
+
+{
+  "request_id": "REQ123457",
+  "verification_id": "eyJjbGllbnRJZCI6IktSN0U3WE0zSzIiLCJyZXF1ZXN0X2lkIjoiUkVRMTIzNDU3IiwiZXhwaXJ5QXQiOjE3ODU3NjU2Mzk1OTV9"
+}
+
+### KYC - Udyam verification
+POST {{baseUrl}}/kyc-api-integration/udyam-verification
+Content-Type: application/json
+
+{
+  "udyam_number": "UXXXM-XX-XX-0XXXX4"
+}
+
+### KYC - FSSAI validation
+POST {{baseUrl}}/kyc-api-integration/fssaiValidation
+Content-Type: application/json
+
+{
+  "flrs_license_no": "21xxxxxxxxx81"
+}
+
+### KYC - Shop Establishment validation
+POST {{baseUrl}}/kyc-api-integration/shopEstablishmentValidation
+Content-Type: application/json
+
+{
+  "registration_number": "108971072503",
+  "state": "Maharashtra"
+}
+
+### KYC - Get CIN by company name
+POST {{baseUrl}}/kyc-api-integration/getCINnoByCompanyName
+Content-Type: application/json
+
+{
+  "company_name": "A******* Private Limited"
+}
+
+### KYC - Get company details by CIN
+POST {{baseUrl}}/kyc-api-integration/getCompanyDetailsByCINno
+Content-Type: application/json
+
+{
+  "company_id": "U729XXXXXXXXXXXXXX851"
+}
+
+### KYC - DIN validation
+POST {{baseUrl}}/kyc-api-integration/dinValidation
+Content-Type: application/json
+
+{
+  "din_number": "0******6"
+}
+
+### KYC - Verify GST
+POST {{baseUrl}}/kyc-api-integration/verifyGST
+Content-Type: application/json
+
+{
+  "gstNumber": "08XXXXXXXX1DW"
+}
+
+### KYC - Verify bank account
+POST {{baseUrl}}/kyc-api-integration/verifyBankAccount
+Content-Type: application/json
+
+{
+  "acc_number": "9XXXXXXXXXXXXX77",
+  "ifsc_number": "UTIXXXXXX794"
+}

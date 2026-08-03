@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuditLog } from './auth/entities/audit-log.entity';
 import { OtpVerification } from './auth/entities/otp-verification.entity';
 import { User } from './auth/entities/user.entity';
+import { KycApiIntegrationModule } from './kyc-api-integration/kyc-api-integration.module';
 
 function resolveHost(
   configService: ConfigService,
@@ -116,6 +117,7 @@ function resolveHost(
       },
     ]),
     AuthModule,
+    KycApiIntegrationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

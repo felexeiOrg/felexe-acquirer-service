@@ -1,5 +1,4 @@
-import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Body, Controller, Post } from '@nestjs/common';
 import { DinValidationDto } from './dto/din-validation.dto';
 import { FssaiValidationDto } from './dto/fssai-validation.dto';
 import { GetAadhaarVerificationStatusDto } from './dto/get-aadhaar-verification-status.dto';
@@ -13,77 +12,82 @@ import { VerifyGSTDto } from './dto/verify-gst.dto';
 import { VerifyPanDto } from './dto/verify-pan.dto';
 import { KycApiIntegrationService } from './kyc-api-integration.service';
 
-@Controller()
+@Controller('kyc-api-integration')
 export class KycApiIntegrationController {
   constructor(
     private readonly kycApiIntegrationService: KycApiIntegrationService,
   ) {}
 
-  @MessagePattern({ cmd: 'kyc-api-integration.getHello' })
-  getHello(): string {
-    return this.kycApiIntegrationService.getHello();
-  }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.verifyPan' })
-  verifyPan(@Payload() body: VerifyPanDto) {
+  //PAN VERIFICATION
+  @Post('verifyPan')
+  async verifyPan(@Body() body: VerifyPanDto) {
     return this.kycApiIntegrationService.verifyPan(body);
   }
 
-  @MessagePattern({
-    cmd: 'kyc-api-integration.initiateAdharVerificationViaDigilocker',
-  })
-  initiateAdharVerificationViaDigilocker(
-    @Payload() body: InitiateAadhaarDigilockerDto,
+  //AADHAAR VERIFICATION
+
+  @Post('initiateAdharVerificationViaDigilocker')
+  async initiateAdharVerificationViaDigilocker(
+    @Body() body: InitiateAadhaarDigilockerDto,
   ) {
     return this.kycApiIntegrationService.initiateAdharVerificationViaDigilocker(
       body,
     );
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.getAdharVerificationStatus' })
-  getAdharVerificationStatus(@Payload() body: GetAadhaarVerificationStatusDto) {
+  @Post('getAdharVerificationStatus')
+  async getAdharVerificationStatus(
+    @Body() body: GetAadhaarVerificationStatusDto,
+  ) {
     return this.kycApiIntegrationService.getAdharVerificationStatus(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.udyamVerification' })
-  udyamVerification(@Payload() body: UdyamVerificationDto) {
+  //MSME VERIFICATION
+
+  @Post('udyam-verification')
+  async udyamVerification(@Body() body: UdyamVerificationDto) {
     return this.kycApiIntegrationService.udyamVerification(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.fssaiValidation' })
-  fssaiValidation(@Payload() body: FssaiValidationDto) {
+  @Post('fssaiValidation')
+  async fssaiValidation(@Body() body: FssaiValidationDto) {
     return this.kycApiIntegrationService.fssaiValidation(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.shopEstablishmentValidation' })
-  shopEstablishmentValidation(
-    @Payload() body: ShopEstablishmentValidationDto,
+  @Post('shopEstablishmentValidation')
+  async shopEstablishmentValidation(
+    @Body() body: ShopEstablishmentValidationDto,
   ) {
     return this.kycApiIntegrationService.shopEstablishmentValidation(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.getCINnoByCompanyName' })
-  getCINnoByCompanyName(@Payload() body: GetCINnoByCompanyNameDto) {
+  //COMPANY VERIFICATION
+
+  @Post('getCINnoByCompanyName')
+  async getCINnoByCompanyName(@Body() body: GetCINnoByCompanyNameDto) {
     return this.kycApiIntegrationService.getCINnoByCompanyName(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.getCompanyDetailsByCINno' })
-  getCompanyDetailsByCINno(@Payload() body: GetCompanyDetailsByCINnoDto) {
+  @Post('getCompanyDetailsByCINno')
+  async getCompanyDetailsByCINno(@Body() body: GetCompanyDetailsByCINnoDto) {
     return this.kycApiIntegrationService.getCompanyDetailsByCINno(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.dinValidation' })
-  dinValidation(@Payload() body: DinValidationDto) {
+  @Post('dinValidation')
+  async dinValidation(@Body() body: DinValidationDto) {
     return this.kycApiIntegrationService.dinValidation(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.verifyGST' })
-  verifyGST(@Payload() body: VerifyGSTDto) {
+  @Post('verifyGST')
+  async verifyGST(@Body() body: VerifyGSTDto) {
     return this.kycApiIntegrationService.verifyGST(body);
   }
 
-  @MessagePattern({ cmd: 'kyc-api-integration.verifyBankAccount' })
-  verifyBankAccount(@Payload() body: VerifyBankAccountDto) {
+  // BANK ACCOUNT VERIFICATION
+
+  @Post('verifyBankAccount')
+  async verifyBankAccount(@Body() body: VerifyBankAccountDto) {
     return this.kycApiIntegrationService.verifyBankAccount(body);
   }
 }
