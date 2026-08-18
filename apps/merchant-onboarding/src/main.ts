@@ -1,13 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { createValidationPipe } from './common/validation/create-validation-pipe';
 import { MerchantOnboardingModule } from './merchant-onboarding.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(MerchantOnboardingModule);
   const configService = app.get(ConfigService);
 
-  // Get host value, but if it's the placeholder string, use default
   let host = configService.get<string>('MERCHANT_ONBOARDING_HOST', 'localhost');
   if (host === 'MERCHANT_ONBOARDING_HOST' || !host) {
     host = 'localhost';
@@ -26,6 +26,8 @@ async function bootstrap() {
         },
       },
     );
+
+  microservice.useGlobalPipes(createValidationPipe());
 
   await microservice.listen();
   console.log(

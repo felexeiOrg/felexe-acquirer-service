@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
+import { mapMicroserviceError } from '../common/validation/map-microservice-error';
 import { DinValidationDto } from './dto/din-validation.dto';
 import { FssaiValidationDto } from './dto/fssai-validation.dto';
 import { GetAadhaarVerificationStatusDto } from './dto/get-aadhaar-verification-status.dto';
@@ -21,93 +22,60 @@ export class KycApiIntegrationService {
   ) {}
 
   async verifyPan(body: VerifyPanDto) {
-    return firstValueFrom(
-      this.kycClient.send({ cmd: 'kyc-api-integration.verifyPan' }, body),
-    );
+    return this.send('kyc-api-integration.verifyPan', body);
   }
 
   async initiateAdharVerificationViaDigilocker(
     body: InitiateAadhaarDigilockerDto,
   ) {
-    return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.initiateAdharVerificationViaDigilocker' },
-        body,
-      ),
+    return this.send(
+      'kyc-api-integration.initiateAdharVerificationViaDigilocker',
+      body,
     );
   }
 
   async getAdharVerificationStatus(body: GetAadhaarVerificationStatusDto) {
-    return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.getAdharVerificationStatus' },
-        body,
-      ),
-    );
+    return this.send('kyc-api-integration.getAdharVerificationStatus', body);
   }
 
   async udyamVerification(body: UdyamVerificationDto) {
-    return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.udyamVerification' },
-        body,
-      ),
-    );
+    return this.send('kyc-api-integration.udyamVerification', body);
   }
 
   async fssaiValidation(body: FssaiValidationDto) {
-    return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.fssaiValidation' },
-        body,
-      ),
-    );
+    return this.send('kyc-api-integration.fssaiValidation', body);
   }
 
   async shopEstablishmentValidation(body: ShopEstablishmentValidationDto) {
-    return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.shopEstablishmentValidation' },
-        body,
-      ),
-    );
+    return this.send('kyc-api-integration.shopEstablishmentValidation', body);
   }
 
   async getCINnoByCompanyName(body: GetCINnoByCompanyNameDto) {
-    return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.getCINnoByCompanyName' },
-        body,
-      ),
-    );
+    return this.send('kyc-api-integration.getCINnoByCompanyName', body);
   }
 
   async getCompanyDetailsByCINno(body: GetCompanyDetailsByCINnoDto) {
-    return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.getCompanyDetailsByCINno' },
-        body,
-      ),
-    );
+    return this.send('kyc-api-integration.getCompanyDetailsByCINno', body);
   }
 
   async dinValidation(body: DinValidationDto) {
-    return firstValueFrom(
-      this.kycClient.send({ cmd: 'kyc-api-integration.dinValidation' }, body),
-    );
+    return this.send('kyc-api-integration.dinValidation', body);
   }
 
   async verifyGST(body: VerifyGSTDto) {
-    return firstValueFrom(
-      this.kycClient.send({ cmd: 'kyc-api-integration.verifyGST' }, body),
-    );
+    return this.send('kyc-api-integration.verifyGST', body);
   }
 
   async verifyBankAccount(body: VerifyBankAccountDto) {
+    return this.send('kyc-api-integration.verifyBankAccount', body);
+  }
+
+  private send<T>(cmd: string, body: unknown): Promise<T> {
     return firstValueFrom(
-      this.kycClient.send(
-        { cmd: 'kyc-api-integration.verifyBankAccount' },
-        body,
+      this.kycClient.send<T>({ cmd }, body).pipe(
+        catchError((err: unknown) =>
+          throwError(() => mapMicroserviceError(err)),
+        ),
       ),
     );
   }

@@ -28,6 +28,191 @@ Content-Type: application/json
   "email": "admin@example.com"
 }
 
+### Merchant Onboarding - Send Invite (creates merchant login via auth/register)
+POST {{baseUrl}}/merchant-onboarding/sendInvite
+Content-Type: application/json
+
+{
+  "company_name": "Merchant Co Pvt Ltd",
+  "business_website": "https://merchant.example.com",
+  "company_type": "private_limited",
+  "first_name": "Merchant",
+  "last_name": "Owner",
+  "mobile": "9876543211",
+  "email": "merchant@example.com"
+}
+
+### Merchant Onboarding - Add Merchant Details (GST → CIN → company profile)
+POST {{baseUrl}}/merchant-onboarding/addMerchantDetails
+Content-Type: application/json
+
+{
+  "gstNumber": "27AAKCT9792K2ZA"
+}
+
+### Merchant Onboarding - Get Merchant by clientId
+@clientId = replace-with-client-id-from-addMerchantDetails
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}
+
+### Merchant Onboarding - Update Merchant (POST — all fields optional)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/update
+Content-Type: application/json
+
+{
+  "legalName": "SYNRA FINTEK PRIVATE LIMITED",
+  "tradeName": "SYNRA FINTEK",
+  "status": "pending",
+  "verificationStatus": "in_review",
+  "directors": [
+    {
+      "din": "12345678",
+      "pan": "AAKCT9792K",
+      "firstName": "John",
+      "lastName": "Doe",
+      "fullName": "John Doe",
+      "dateOfAppointment": "2024-01-01",
+      "disqualified": false,
+      "isVerified": false,
+      "isVkycVerified": false
+    }
+  ],
+  "authorizedSignatories": [
+    {
+      "din": "87654321",
+      "pan": "AAKCT9792K",
+      "firstName": "Jane",
+      "lastName": "Doe",
+      "fullName": "Jane Doe",
+      "dateOfAppointment": "2024-01-01",
+      "disqualified": false,
+      "isVerified": false,
+      "isVkycVerified": false
+    }
+  ]
+}
+
+### Merchant Onboarding - Delete Merchant (POST soft-delete)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/delete
+Content-Type: application/json
+
+{}
+
+### Directors - List
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/directors
+
+### Directors - Create
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/directors
+Content-Type: application/json
+
+{
+  "din": "12345678",
+  "pan": "AAKCT9792K",
+  "firstName": "John",
+  "lastName": "Doe",
+  "fullName": "John Doe",
+  "dateOfAppointment": "2024-01-01",
+  "disqualified": false,
+  "isVerified": false,
+  "isVkycVerified": false
+}
+
+### Directors - Get by id
+@directorId = replace-with-director-id
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/directors/{{directorId}}
+
+### Directors - Update (POST)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/directors/{{directorId}}/update
+Content-Type: application/json
+
+{
+  "fullName": "John Updated Doe",
+  "isVerified": true,
+  "videoKycStatus": "completed"
+}
+
+### Directors - Delete (POST soft-delete)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/directors/{{directorId}}/delete
+Content-Type: application/json
+
+{}
+
+### Authorizers - List
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/authorizers
+
+### Authorizers - Create
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/authorizers
+Content-Type: application/json
+
+{
+  "din": "87654321",
+  "pan": "AAKCT9792K",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "fullName": "Jane Doe",
+  "dateOfAppointment": "2024-01-01",
+  "disqualified": false,
+  "isVerified": false,
+  "isVkycVerified": false
+}
+
+### Authorizers - Get by id
+@authorizerId = replace-with-authorizer-id
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/authorizers/{{authorizerId}}
+
+### Authorizers - Update (POST)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/authorizers/{{authorizerId}}/update
+Content-Type: application/json
+
+{
+  "fullName": "Jane Updated Doe",
+  "isVerified": true
+}
+
+### Authorizers - Delete (POST soft-delete)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/authorizers/{{authorizerId}}/delete
+Content-Type: application/json
+
+{}
+
+### Bank Details - List
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details
+
+### Bank Details - Create
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details
+Content-Type: application/json
+
+{
+  "accountNumber": "9876543210123",
+  "ifscCode": "HDFC0001234",
+  "bankName": "HDFC Bank",
+  "branchName": "Mumbai Main",
+  "accountHolderName": "SYNRA FINTEK PRIVATE LIMITED",
+  "accountType": "current",
+  "isPrimary": true,
+  "isVerified": false,
+  "verificationStatus": "pending"
+}
+
+### Bank Details - Get by id
+@bankDetailId = replace-with-bank-detail-id
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details/{{bankDetailId}}
+
+### Bank Details - Update (POST)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details/{{bankDetailId}}/update
+Content-Type: application/json
+
+{
+  "isVerified": true,
+  "verificationStatus": "verified",
+  "accountHolderName": "SYNRA FINTEK PVT LTD"
+}
+
+### Bank Details - Delete (POST soft-delete)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details/{{bankDetailId}}/delete
+Content-Type: application/json
+
+{}
+
 ### Auth - Login (mobile + password) -> returns OTP
 POST {{baseUrl}}/auth/login
 Content-Type: application/json

@@ -61,7 +61,7 @@ export class AuthService {
       company_name: createUserDto.company_name,
       business_website: createUserDto.business_website ?? null,
       company_type: createUserDto.company_type ?? null,
-      role: UserRole.SYSTEM_ADMIN,
+      role: createUserDto.role ?? UserRole.SYSTEM_ADMIN,
       first_name: createUserDto.first_name,
       last_name: createUserDto.last_name,
       mobile,

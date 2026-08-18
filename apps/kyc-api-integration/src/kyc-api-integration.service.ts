@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -25,6 +24,7 @@ import {
   RPACPC_CONSENT,
   RPACPC_CONSENT_TEXT,
 } from './constants/rpacpc.constants';
+import { badRequestForField } from './common/validation/field-error.util';
 @Injectable()
 export class KycApiIntegrationService {
   private readonly logger = new Logger(KycApiIntegrationService.name);
@@ -52,7 +52,7 @@ export class KycApiIntegrationService {
       .toUpperCase();
 
     if (!pan) {
-      throw new BadRequestException('pan is required');
+      throw badRequestForField('pan', 'pan is required');
     }
 
     // Generated vendor payload (frontend never sends this)
@@ -84,7 +84,7 @@ export class KycApiIntegrationService {
       .replace(/\s/g, '');
 
     if (!/^\d{12}$/.test(aadhaar)) {
-      throw new BadRequestException('aadhaar must be exactly 12 digits');
+      throw badRequestForField('aadhaar', 'aadhaar must be exactly 12 digits');
     }
 
     const requestId = `REQ${Date.now()}`;
@@ -116,10 +116,10 @@ export class KycApiIntegrationService {
     const verificationId = String(payload.verification_id ?? '').trim();
 
     if (!requestId) {
-      throw new BadRequestException('request_id is required');
+      throw badRequestForField('request_id', 'request_id is required');
     }
     if (!verificationId) {
-      throw new BadRequestException('verification_id is required');
+      throw badRequestForField('verification_id', 'verification_id is required');
     }
 
     const requestPayload = {
@@ -157,7 +157,7 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!udyamNumber) {
-      throw new BadRequestException('udyam_number is required');
+      throw badRequestForField('udyam_number', 'udyam_number is required');
     }
 
     const requestId = `${Date.now()}`;
@@ -194,7 +194,7 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!licenseNo) {
-      throw new BadRequestException('flrs_license_no is required');
+      throw badRequestForField('flrs_license_no', 'flrs_license_no is required');
     }
 
     const requestId = `${Date.now()}`;
@@ -238,10 +238,10 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!registrationNumber) {
-      throw new BadRequestException('registration_number is required');
+      throw badRequestForField('registration_number', 'registration_number is required');
     }
     if (!state) {
-      throw new BadRequestException('state is required');
+      throw badRequestForField('state', 'state is required');
     }
 
     const requestId = `${Date.now()}`;
@@ -281,7 +281,7 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!companyName) {
-      throw new BadRequestException('company_name is required');
+      throw badRequestForField('company_name', 'company_name is required');
     }
 
     const requestId = `${Date.now()}`;
@@ -319,7 +319,7 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!companyId) {
-      throw new BadRequestException('company_id is required');
+      throw badRequestForField('company_id', 'company_id is required');
     }
 
     const requestId = `${Date.now()}`;
@@ -355,7 +355,7 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!dinNumber) {
-      throw new BadRequestException('din_number is required');
+      throw badRequestForField('din_number', 'din_number is required');
     }
 
     const requestId = `${Date.now()}`;
@@ -392,7 +392,7 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!gstNumber) {
-      throw new BadRequestException('gstNumber is required');
+      throw badRequestForField('gstNumber', 'gstNumber is required');
     }
 
     const requestId = `${Date.now()}`;
@@ -440,10 +440,10 @@ export class KycApiIntegrationService {
     ).trim();
 
     if (!accNumber) {
-      throw new BadRequestException('acc_number is required');
+      throw badRequestForField('acc_number', 'acc_number is required');
     }
     if (!ifscNumber) {
-      throw new BadRequestException('ifsc_number is required');
+      throw badRequestForField('ifsc_number', 'ifsc_number is required');
     }
 
     const requestId = `${Date.now()}`;

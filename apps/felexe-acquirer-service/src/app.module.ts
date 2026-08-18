@@ -9,6 +9,7 @@ import { AuditLog } from './auth/entities/audit-log.entity';
 import { OtpVerification } from './auth/entities/otp-verification.entity';
 import { User } from './auth/entities/user.entity';
 import { KycApiIntegrationModule } from './kyc-api-integration/kyc-api-integration.module';
+import { MerchantOnboardingModule } from './merchant-onboarding/merchant-onboarding.module';
 
 function resolveHost(
   configService: ConfigService,
@@ -118,6 +119,7 @@ function resolveHost(
     ]),
     AuthModule,
     KycApiIntegrationModule,
+    MerchantOnboardingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

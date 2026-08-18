@@ -1,8 +1,14 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
+import {
+  CIN_REGEX,
+  VALIDATION_MESSAGES,
+} from '../../common/validation/validation-patterns.constants';
 
-/** Frontend only sends company_id (CIN). Vendor payload is built in KYC microservice. */
 export class GetCompanyDetailsByCINnoDto {
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'company_id should not be empty' })
+  @Transform(({ value }) => String(value ?? '').trim().toUpperCase())
+  @Matches(CIN_REGEX, { message: VALIDATION_MESSAGES.companyId })
   company_id: string;
 }

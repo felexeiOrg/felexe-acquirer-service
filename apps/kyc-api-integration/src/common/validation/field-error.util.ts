@@ -1,0 +1,55 @@
+import { BadRequestException } from '@nestjs/common';
+import {
+  buildValidationErrorResponse,
+  FieldValidationError,
+} from './validation-error.util';
+
+const FIELD_HINTS: Array<{ pattern: RegExp; field: string }> = [
+  { pattern: /\bgst(in|number)?\b/i, field: 'gstNumber' },
+  { pattern: /\bacc(ount)?[_ ]?number\b/i, field: 'acc_number' },
+  { pattern: /\bifsc[_ ]?number\b/i, field: 'ifsc_number' },
+  { pattern: /\bcompany_id\b/i, field: 'company_id' },
+  { pattern: /\bcompany_name\b/i, field: 'company_name' },
+  { pattern: /\budyam[_ ]?number\b/i, field: 'udyam_number' },
+  { pattern: /\bdin[_ ]?number\b/i, field: 'din_number' },
+  { pattern: /\bverification_id\b/i, field: 'verification_id' },
+  { pattern: /\brequest_id\b/i, field: 'request_id' },
+  { pattern: /\bflrs[_ ]?license\b/i, field: 'flrs_license_no' },
+  { pattern: /\bregistration[_ ]?number\b/i, field: 'registration_number' },
+  { pattern: /\bstate\b/i, field: 'state' },
+  { pattern: /\baadhaar\b/i, field: 'aadhaar' },
+  { pattern: /\bpan\b/i, field: 'pan' },
+];
+
+export function inferFieldFromMessage(message: string): string {
+  const trimmed = message.trim();
+  for (const hint of FIELD_HINTS) {
+    if (hint.pattern.test(trimmed)) {
+      return hint.field;
+    }
+  }
+  const explicitField = trimmed.match(/^([A-Za-z0-9_.[\]-]+)\s+(must|should|is|cannot)/);
+  if (explicitField) {
+    return explicitField[1];
+  }
+  return trimmed.split(/\s+/)[0]?.replace(/\.$/, '') ?? 'unknown';
+}
+
+export function badRequestForField(
+  field: string,
+  message: string,
+): BadRequestException {
+  return new BadRequestException(
+    buildValidationErrorResponse([{ field, message }]),
+  );
+}
+
+export function badRequestForMessage(message: string): BadRequestException {
+  return badRequestForField(inferFieldFromMessage(message), message);
+}
+
+export function badRequestForFields(
+  errors: FieldValidationError[],
+): BadRequestException {
+  return new BadRequestException(buildValidationErrorResponse(errors));
+}
