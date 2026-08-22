@@ -1,4 +1,5 @@
 import {
+  Allow,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -41,4 +42,17 @@ export class SendInviteDto {
   @IsOptional()
   @IsString()
   company_type?: string;
+
+  /** UI may send GST here; it is ignored. GST is bound later in addMerchantDetails. */
+  @IsOptional()
+  @Allow()
+  gstNumber?: string;
+
+  @IsOptional()
+  @Allow()
+  gst_number?: string;
+
+  @IsOptional()
+  @Allow()
+  gst?: string;
 }

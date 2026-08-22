@@ -5,6 +5,7 @@ import {
   ClientIdResourcePayloadDto,
   CreateDirectorPayloadDto,
   UpdateDirectorPayloadDto,
+  UploadVideoKycPayloadDto,
 } from './dto/payload.dto';
 import { DirectorCrudService } from './director-crud.service';
 
@@ -32,6 +33,15 @@ export class DirectorController {
   update(@Payload() payload: UpdateDirectorPayloadDto) {
     const { clientId, id, ...body } = payload;
     return this.directorCrudService.update(clientId, id, body);
+  }
+
+  @MessagePattern({ cmd: 'merchant-onboarding.directors.videoKyc.upload' })
+  uploadVideoKyc(@Payload() payload: UploadVideoKycPayloadDto) {
+    return this.directorCrudService.saveVideoKyc(
+      payload.clientId,
+      payload.id,
+      payload.videoKycUrl,
+    );
   }
 
   @MessagePattern({ cmd: 'merchant-onboarding.directors.delete' })

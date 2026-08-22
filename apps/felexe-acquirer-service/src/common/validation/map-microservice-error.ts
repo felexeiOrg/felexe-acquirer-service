@@ -54,7 +54,7 @@ export function mapMicroserviceError(err: unknown): HttpException {
           HttpStatus.NOT_FOUND,
         );
       }
-      if (/required|invalid|validation failed/i.test(message)) {
+      if (/required|invalid|validation failed|must be|not completed|before submit/i.test(message)) {
         return new HttpException(
           buildValidationErrorResponse([
             { field: inferFieldFromMessage(message), message },

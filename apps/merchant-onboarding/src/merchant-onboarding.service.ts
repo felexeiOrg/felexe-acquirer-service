@@ -18,9 +18,13 @@ import { DataSource, Repository } from 'typeorm';
 import { AuditService } from './audit.service';
 import { badRequestForField } from './common/validation/field-error.util';
 import { MerchantAuditEvent } from './constants/audit-event.constants';
+import { OnboardingSectionKey } from './constants/onboarding-section.constants';
 import { MERCHANT_ROLE } from './constants/user-role.constants';
+import { isSectionSubmitted } from './merchant-onboarding-form.service';
 import { AddMerchantDetailsDto } from './dto/add-merchant-details.dto';
 import { SendInviteDto } from './dto/send-invite.dto';
+import { StartOnboardingDto } from './dto/start-onboarding.dto';
+import { SubmitMerchantDetailsSectionDto } from './dto/submit-merchant-details-section.dto';
 import {
   UpdateMerchantDto,
   UpdatePersonDto,
@@ -29,7 +33,10 @@ import { AuthorizedSignatory } from './entities/authorized-signatory.entity';
 import { BankDetail } from './entities/bank-detail.entity';
 import { Director } from './entities/director.entity';
 import { Merchant } from './entities/merchant.entity';
+import { MerchantInvite } from './entities/merchant-invite.entity';
 import { KycClientService } from './kyc-client.service';
+import { MerchantInviteService } from './merchant-invite.service';
+import { MerchantOnboardingTrackService } from './merchant-onboarding-track.service';
 import {
   asRecord,
   asString,
@@ -50,6 +57,8 @@ export class MerchantOnboardingService {
     private readonly configService: ConfigService,
     private readonly kycClientService: KycClientService,
     private readonly auditService: AuditService,
+    private readonly merchantInviteService: MerchantInviteService,
+    private readonly merchantOnboardingTrackService: MerchantOnboardingTrackService,
     private readonly dataSource: DataSource,
     @InjectRepository(Merchant)
     private readonly merchantRepository: Repository<Merchant>,
@@ -65,6 +74,80 @@ export class MerchantOnboardingService {
     return 'Hello World!';
   }
 
+  getInvitedMerchantList() {
+    return this.merchantInviteService.listInvitedMerchants();
+  }
+
+  getOnboardedMerchantList() {
+    return this.merchantInviteService.listOnboardedMerchants();
+  }
+
+  getCompletedMerchantList() {
+    return this.merchantInviteService.listCompletedMerchants();
+  }
+
+  refreshInviteProgressByUserId(userId: string) {
+    return this.merchantInviteService.refreshProgressByUserId(userId);
+  }
+
+  startOnboarding(body: StartOnboardingDto) {
+    return this.merchantOnboardingTrackService.startOnboarding(body);
+  }
+
+  getOnboardingStatusByUser(userId: string) {
+    return this.merchantOnboardingTrackService.getOnboardingStatus(userId);
+  }
+
+  getOnboardingStatusByClient(clientId: string) {
+    return this.merchantOnboardingTrackService.getOnboardingStatusByClientId(
+      clientId,
+    );
+  }
+
+  getMerchantDetailsFormConfig(clientId: string) {
+    return this.merchantOnboardingTrackService.getMerchantDetailsFormConfig(
+      clientId,
+    );
+  }
+
+  submitMerchantDetailsSection(
+    clientId: string,
+    body: SubmitMerchantDetailsSectionDto,
+  ) {
+    return this.merchantOnboardingTrackService.submitMerchantDetailsSection(
+      clientId,
+      body,
+    );
+  }
+
+  submitDirectorsSection(clientId: string) {
+    return this.merchantOnboardingTrackService.submitDirectorsSection(clientId);
+  }
+
+  submitAuthorizersSection(clientId: string) {
+    return this.merchantOnboardingTrackService.submitAuthorizersSection(
+      clientId,
+    );
+  }
+
+  submitBankDetailsSection(clientId: string) {
+    return this.merchantOnboardingTrackService.submitBankDetailsSection(
+      clientId,
+    );
+  }
+
+  submitVideoKycSection(clientId: string) {
+    return this.merchantOnboardingTrackService.submitVideoKycSection(clientId);
+  }
+
+  submitDocumentsSection(clientId: string) {
+    return this.merchantOnboardingTrackService.submitDocumentsSection(clientId);
+  }
+
+  completeOnboarding(clientId: string) {
+    return this.merchantOnboardingTrackService.completeOnboarding(clientId);
+  }
+
   /**
    * Creates merchant login credentials by calling gateway auth/register.
    * Password is system-generated; login is via mobile + temp password.
@@ -73,28 +156,63 @@ export class MerchantOnboardingService {
     const email = body.email.toLowerCase().trim();
     const mobile = body.mobile.trim();
 
-    if (!mobile || !/^\d{10}$/.test(mobile)) {
-      throw new BadRequestException('mobile must be exactly 10 digits');
-    }
-    if (!email) {
-      throw new BadRequestException('email is required');
-    }
-
-    await this.assertMobileAndEmailAvailable(mobile, email);
-
-    const registerUrl = this.buildAuthRegisterUrl();
-    const registerPayload = {
-      company_name: body.company_name,
-      first_name: body.first_name,
-      last_name: body.last_name,
-      mobile,
-      email,
-      business_website: body.business_website,
-      company_type: body.company_type,
-      role: MERCHANT_ROLE,
-    };
-
     try {
+      if (!mobile || !/^\d{10}$/.test(mobile)) {
+        throw badRequestForField('mobile', 'mobile must be exactly 10 digits');
+      }
+      if (!email) {
+        throw badRequestForField('email', 'email is required');
+      }
+
+      const existingMerchantUser = await this.findMerchantUserByMobileOrEmail(
+        mobile,
+        email,
+      );
+
+      if (existingMerchantUser) {
+        await this.merchantInviteService.ensureInviteForUser({
+          userId: existingMerchantUser.id,
+          company_name: body.company_name,
+          first_name: body.first_name,
+          last_name: body.last_name,
+          mobile,
+          email,
+          business_website: body.business_website ?? null,
+          company_type: body.company_type ?? null,
+        });
+
+        return {
+          message: 'Merchant invite already exists for this mobile or email',
+          login_mobile: existingMerchantUser.mobile,
+          user: {
+            id: existingMerchantUser.id,
+            company_name: existingMerchantUser.company_name,
+            first_name: existingMerchantUser.first_name,
+            last_name: existingMerchantUser.last_name,
+            mobile: existingMerchantUser.mobile,
+            email: existingMerchantUser.email,
+            role: existingMerchantUser.role,
+            is_active: existingMerchantUser.is_active,
+            must_change_password: existingMerchantUser.must_change_password,
+            created_at: existingMerchantUser.created_at,
+          },
+        };
+      }
+
+      await this.assertMobileAndEmailAvailable(mobile, email);
+
+      const registerUrl = this.buildAuthRegisterUrl();
+      const registerPayload = {
+        company_name: body.company_name,
+        first_name: body.first_name,
+        last_name: body.last_name,
+        mobile,
+        email,
+        business_website: body.business_website,
+        company_type: body.company_type,
+        role: MERCHANT_ROLE,
+      };
+
       const response = await firstValueFrom(
         this.httpService.post(registerUrl, registerPayload, {
           headers: { 'Content-Type': 'application/json' },
@@ -104,10 +222,7 @@ export class MerchantOnboardingService {
       );
 
       if (response.status === 409) {
-        const message =
-          (response.data as { message?: string })?.message ??
-          'User with this email or mobile already exists';
-        throw new ConflictException(message);
+        throw this.conflictFromRegister(mobile, email, response.data);
       }
 
       if (response.status === 400) {
@@ -151,6 +266,8 @@ export class MerchantOnboardingService {
         metadata: { source: 'sendInvite' },
       });
 
+      await this.merchantInviteService.createFromSendInvite(body, user);
+
       return {
         message: 'Merchant invite created successfully',
         login_mobile: user.mobile,
@@ -169,6 +286,13 @@ export class MerchantOnboardingService {
         },
       };
     } catch (error) {
+      if (!(error instanceof HttpException)) {
+        const axiosError = error as AxiosError;
+        this.logger.error(
+          `sendInvite failed: ${axiosError.message ?? 'unknown error'}`,
+        );
+      }
+
       await this.auditService.log({
         event: MerchantAuditEvent.MERCHANT_INVITE_FAILED,
         action: 'CREATE',
@@ -184,21 +308,7 @@ export class MerchantOnboardingService {
         },
       });
 
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException ||
-        error instanceof InternalServerErrorException
-      ) {
-        throw error;
-      }
-
-      const axiosError = error as AxiosError;
-      this.logger.error(
-        `sendInvite failed: ${axiosError.message ?? 'unknown error'}`,
-      );
-      throw new InternalServerErrorException(
-        'Failed to create merchant login credentials',
-      );
+      throw this.toRpcException(error);
     }
   }
 
@@ -230,11 +340,79 @@ export class MerchantOnboardingService {
 
     this.logger.log(`addMerchantDetails started for GSTIN=${gstNumber}`);
 
+    const invite = await this.merchantInviteService.findInviteByUserIdOrMobile(
+      body.userId,
+      body.mobile,
+    );
+
+    const boundMerchant = invite?.client_id
+      ? await this.merchantRepository.findOne({
+          where: { client_id: invite.client_id },
+        })
+      : null;
+
+    if (boundMerchant) {
+      this.assertSameGstOnboarding(gstNumber, boundMerchant);
+    }
+
+    if (invite && this.isMerchantDetailsCompleted(invite)) {
+      this.logger.log(
+        `Merchant details already completed for userId=${invite.user_id} — skipping insert`,
+      );
+
+      if (!invite.client_id) {
+        return {
+          existing: true,
+          merchantDetailsCompleted: true,
+          clientId: null,
+          message: 'Merchant details already completed; no data inserted',
+        };
+      }
+
+      const completedMerchant = await this.merchantRepository.findOne({
+        where: { client_id: invite.client_id },
+      });
+
+      if (completedMerchant) {
+        return {
+          ...(await this.buildExistingMerchantResult(completedMerchant)),
+          merchantDetailsCompleted: true,
+        };
+      }
+
+      return {
+        existing: true,
+        merchantDetailsCompleted: true,
+        clientId: invite.client_id,
+        message: 'Merchant details already completed; no data inserted',
+      };
+    }
+
     const existing = await this.merchantRepository.findOne({
       where: { gstin: gstNumber },
     });
     if (existing) {
-      throw new ConflictException('Merchant with this GSTIN already exists');
+      if (invite?.client_id && invite.client_id !== existing.client_id) {
+        throw badRequestForField(
+          'gstNumber',
+          `Onboarding is already started for a different merchant. GSTIN ${gstNumber} cannot be used on this account.`,
+        );
+      }
+      this.logger.log(
+        `GSTIN ${gstNumber} already exists — returning stored merchant clientId=${existing.client_id}`,
+      );
+      if (body.userId) {
+        await this.merchantInviteService.linkClientId(
+          body.userId,
+          existing.client_id,
+        );
+      } else if (body.mobile) {
+        await this.merchantInviteService.linkClientIdByMobile(
+          body.mobile,
+          existing.client_id,
+        );
+      }
+      return this.buildExistingMerchantResult(existing);
     }
 
     // 1) verifyGST
@@ -254,6 +432,20 @@ export class MerchantOnboardingService {
       throw badRequestForField(
         'gstNumber',
         'Legal name not found in GST verification response',
+      );
+    }
+
+    if (
+      boundMerchant &&
+      this.companyNamesDiffer(
+        legalName,
+        boundMerchant.legal_name,
+        boundMerchant.trade_name,
+      )
+    ) {
+      throw badRequestForField(
+        'gstNumber',
+        `GSTIN ${gstNumber} belongs to "${legalName}", which does not match the onboarded merchant "${boundMerchant.legal_name || boundMerchant.trade_name}". A different merchant is not allowed.`,
       );
     }
 
@@ -380,6 +572,8 @@ export class MerchantOnboardingService {
         trade_name: tradeName,
         status: 'pending',
         verification_status: 'pending',
+        onboarding_type: 'with_gst',
+        selected_merchant_profile: null,
         merchant_profile: merchantProfile as unknown as Record<string, unknown>,
         raw_gst_response: gstResponse,
         raw_cin_lookup_response: cinLookupResponse,
@@ -513,13 +707,35 @@ export class MerchantOnboardingService {
       }
     });
 
+    if (body.userId) {
+      await this.merchantInviteService.linkClientId(body.userId, clientId);
+    } else if (body.mobile) {
+      await this.merchantInviteService.linkClientIdByMobile(body.mobile, clientId);
+    }
+
+    await this.merchantOnboardingTrackService.markSectionsDraftAfterGstBootstrap(
+      clientId,
+      body.userId,
+    );
+
+    await this.merchantInviteService.refreshProgress(clientId);
+
     return {
       clientId,
       status: 'pending',
       verification_status: 'pending',
+      onboardingType: 'with_gst',
+      sections: await this.getOnboardingStatusByClient(clientId).then(
+        (result) => result.sections,
+      ),
       merchantProfile,
       directorsSaved: directors.length,
       authorizedSignatoriesSaved: authorizedSignatories.length,
+      ...this.toVendorKycResponses(
+        gstResponse,
+        cinLookupResponse,
+        companyResponse,
+      ),
     };
   }
 
@@ -785,6 +1001,61 @@ export class MerchantOnboardingService {
     };
   }
 
+  private isMerchantDetailsCompleted(invite: MerchantInvite): boolean {
+    if (invite.merchant_details_completed) {
+      return true;
+    }
+
+    const sectionStatus =
+      invite.section_statuses?.[OnboardingSectionKey.MERCHANT_DETAILS];
+    return isSectionSubmitted(sectionStatus ?? '');
+  }
+
+  private async buildExistingMerchantResult(merchant: Merchant) {
+    const directors = await this.directorRepository.find({
+      where: { client_id: merchant.client_id, status: 'active' },
+      order: { created_at: 'ASC' },
+    });
+    const authorizedSignatories =
+      await this.authorizedSignatoryRepository.find({
+        where: { client_id: merchant.client_id, status: 'active' },
+        order: { created_at: 'ASC' },
+      });
+    const bankDetails = await this.bankDetailRepository.find({
+      where: { client_id: merchant.client_id, status: 'active' },
+      order: { created_at: 'ASC' },
+    });
+
+    return {
+      ...this.toMerchantResponse(
+        merchant,
+        directors,
+        authorizedSignatories,
+        bankDetails,
+      ),
+      directorsSaved: directors.length,
+      authorizedSignatoriesSaved: authorizedSignatories.length,
+      existing: true,
+      ...this.toVendorKycResponses(
+        merchant.raw_gst_response,
+        merchant.raw_cin_lookup_response,
+        merchant.raw_company_response,
+      ),
+    };
+  }
+
+  private toVendorKycResponses(
+    gstResponse: Record<string, unknown> | null | undefined,
+    cinLookupResponse: Record<string, unknown> | null | undefined,
+    companyResponse: Record<string, unknown> | null | undefined,
+  ) {
+    return {
+      verifyGST: gstResponse ?? null,
+      getCINnoByCompanyName: cinLookupResponse ?? null,
+      getCompanyDetailsByCINno: companyResponse ?? null,
+    };
+  }
+
   private async findMerchantByClientId(clientId: string): Promise<Merchant> {
     const normalizedClientId = String(clientId ?? '').trim();
     if (!normalizedClientId) {
@@ -801,6 +1072,52 @@ export class MerchantOnboardingService {
     }
 
     return merchant;
+  }
+
+  private assertSameGstOnboarding(gstNumber: string, merchant: Merchant) {
+    const boundGstin = String(merchant.gstin ?? '').trim().toUpperCase();
+    if (!boundGstin) {
+      return;
+    }
+
+    if (boundGstin === gstNumber) {
+      return;
+    }
+
+    throw badRequestForField(
+      'gstNumber',
+      `Onboarding is already started with GSTIN ${boundGstin} (${merchant.legal_name || merchant.trade_name || 'existing merchant'}). A different GSTIN or merchant name is not allowed.`,
+    );
+  }
+
+  private companyNamesDiffer(
+    incomingName: string,
+    legalName?: string | null,
+    tradeName?: string | null,
+  ): boolean {
+    const incoming = this.normalizeCompanyName(incomingName);
+    if (!incoming) {
+      return false;
+    }
+
+    const known = [legalName, tradeName]
+      .map((name) => this.normalizeCompanyName(name))
+      .filter(Boolean);
+
+    if (!known.length) {
+      return false;
+    }
+
+    return !known.some(
+      (name) => name === incoming || name.includes(incoming) || incoming.includes(name),
+    );
+  }
+
+  private normalizeCompanyName(name?: string | null): string {
+    return String(name ?? '')
+      .toUpperCase()
+      .replace(/PRIVATE LIMITED|PVT LTD|PVT\. LTD\.|LIMITED|LTD/g, '')
+      .replace(/[^A-Z0-9]/g, '');
   }
 
   private toMerchantResponse(
@@ -844,8 +1161,15 @@ export class MerchantOnboardingService {
       dateOfAppointment: person.date_of_appointment,
       disqualified: person.disqualified,
       isVerified: person.is_verified,
+      rejectionReason: person.rejection_reason,
+      sessionId: person.session_id,
+      videoKycUrl: person.video_kyc_url,
+      faceVideoUrl: person.face_video_url,
+      aadhaarPhotoUrl: person.aadhaar_photo_url,
+      panPhotoUrl: person.pan_photo_url,
       videoKycStatus: person.video_kyc_status,
       isVkycVerified: person.is_vkyc_verified,
+      vkycRejectionReason: person.vkyc_rejection_reason,
       status: person.status,
       createdAt: person.created_at,
       updatedAt: person.updated_at,
@@ -867,6 +1191,7 @@ export class MerchantOnboardingService {
       date_of_appointment: person.dateOfAppointment ?? null,
       disqualified: person.disqualified ?? false,
       is_verified: person.isVerified ?? false,
+      video_kyc_url: person.videoKycUrl ?? null,
       video_kyc_status: person.videoKycStatus ?? null,
       is_vkyc_verified: person.isVkycVerified ?? false,
       status: person.status ?? 'active',
@@ -926,6 +1251,7 @@ export class MerchantOnboardingService {
     date_of_appointment: string | null;
     disqualified: boolean;
     is_verified: boolean;
+    video_kyc_url: null;
     video_kyc_status: null;
     is_vkyc_verified: boolean;
     status: string;
@@ -941,10 +1267,75 @@ export class MerchantOnboardingService {
       date_of_appointment: person.dateOfAppointment || null,
       disqualified: person.disqualified,
       is_verified: false,
+      video_kyc_url: null,
       video_kyc_status: null,
       is_vkyc_verified: false,
       status: 'active',
     };
+  }
+
+  private async findMerchantUserByMobileOrEmail(
+    mobile: string,
+    email: string,
+  ): Promise<{
+    id: string;
+    company_name: string;
+    first_name: string;
+    last_name: string;
+    mobile: string;
+    email: string;
+    role: string;
+    is_active: number;
+    must_change_password: boolean;
+    created_at: Date;
+  } | null> {
+    const rows = (await this.dataSource.query(
+      `SELECT id, company_name, first_name, last_name, mobile, email, role,
+              is_active, must_change_password, created_at
+       FROM users
+       WHERE role = $1 AND (mobile = $2 OR LOWER(email) = $3)
+       LIMIT 1`,
+      [MERCHANT_ROLE, mobile, email.toLowerCase()],
+    )) as Array<{
+      id: string;
+      company_name: string;
+      first_name: string;
+      last_name: string;
+      mobile: string;
+      email: string;
+      role: string;
+      is_active: number;
+      must_change_password: boolean;
+      created_at: Date;
+    }>;
+
+    return rows[0] ?? null;
+  }
+
+  private conflictFromRegister(
+    mobile: string,
+    email: string,
+    data: unknown,
+  ): ConflictException {
+    const message =
+      (data as { message?: string })?.message ??
+      'User with this email or mobile already exists';
+    const field = /mobile/i.test(message) ? 'mobile' : 'email';
+    return this.conflictForField(
+      field,
+      field === 'mobile'
+        ? `Mobile ${mobile} is already registered`
+        : `Email ${email} is already registered`,
+    );
+  }
+
+  private conflictForField(field: string, message: string): ConflictException {
+    return new ConflictException({
+      statusCode: 409,
+      message,
+      error: 'Conflict',
+      errors: [{ field, message }],
+    });
   }
 
   private async assertMobileAndEmailAvailable(
@@ -952,12 +1343,12 @@ export class MerchantOnboardingService {
     email: string,
   ): Promise<void> {
     const rows = (await this.dataSource.query(
-      `SELECT mobile, email
+      `SELECT mobile, email, role
        FROM users
        WHERE mobile = $1 OR LOWER(email) = $2
        LIMIT 1`,
-      [mobile, email],
-    )) as Array<{ mobile: string; email: string }>;
+      [mobile, email.toLowerCase()],
+    )) as Array<{ mobile: string; email: string; role: string }>;
 
     if (!rows.length) {
       return;
@@ -965,9 +1356,15 @@ export class MerchantOnboardingService {
 
     const existing = rows[0];
     if (existing.mobile === mobile) {
-      throw new ConflictException('Mobile number already registered');
+      throw this.conflictForField(
+        'mobile',
+        `Mobile ${mobile} is already registered as ${existing.role}. Use a different merchant mobile.`,
+      );
     }
-    throw new ConflictException('Email already registered');
+    throw this.conflictForField(
+      'email',
+      `Email ${existing.email} is already registered as ${existing.role}. Use a different merchant email.`,
+    );
   }
 
   private buildAuthRegisterUrl(): string {

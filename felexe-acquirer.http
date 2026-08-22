@@ -19,13 +19,13 @@ POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
 {
-  "company_name": "Your Company Pvt Ltd",
-  "business_website": "https://example.com",
+  "company_name": "felexei Private Limted",
+  "business_website": "https://felexei.com",
   "company_type": "private_limited",
-  "first_name": "Admin",
-  "last_name": "User",
-  "mobile": "{{mobile}}",
-  "email": "admin@example.com"
+  "first_name": "Ketan",
+  "last_name": "Patange",
+  "mobile": "9284329868",
+  "email": "tech@felexei.com"
 }
 
 ### Merchant Onboarding - Send Invite (creates merchant login via auth/register)
@@ -42,12 +42,190 @@ Content-Type: application/json
   "email": "merchant@example.com"
 }
 
+### Merchant Onboarding - Invited merchants (admin only — requires login cookies)
+GET {{baseUrl}}/merchant-onboarding/invited-merchants
+
+### Merchant list after 6-step onboarding (verification_pending + verified)
+GET {{baseUrl}}/merchant-onboarding/merchants
+
+### Completed / verified merchants (charge configuration list)
+GET {{baseUrl}}/merchant-onboarding/completed-merchants
+
+### Charges - Load merchant payin/payout config (admin)
+GET {{baseUrl}}/charges/getCharge/{{clientId}}
+
+### Charges - Save merchant config (admin). Repeat with paymentMode payout.
+POST {{baseUrl}}/charges/saveCharge/{{clientId}}
+Content-Type: application/json
+
+{
+  "clientId": "{{clientId}}",
+  "paymentMode": "payin",
+  "modeOfCharge": "flat",
+  "flat": {
+    "chargePercent": "1.85",
+    "chargeFlat": "5.00",
+    "commissionPercent": "0.30",
+    "commissionFlat": "1.50"
+  },
+  "slabs": [
+    {
+      "minAmount": "0",
+      "maxAmount": "1000",
+      "chargePercent": "2.00",
+      "chargeFlat": "3.00",
+      "commissionPercent": "0.20",
+      "commissionFlat": "1.00"
+    }
+  ]
+}
+
+### Admin verification - Pending maker submissions
+GET {{baseUrl}}/merchant-onboarding/admin/pending
+
+### Admin verification - Full review packet
+GET {{baseUrl}}/merchant-onboarding/admin/{{clientId}}
+
+### Admin verification - Approve/reject one section
+POST {{baseUrl}}/merchant-onboarding/admin/{{clientId}}/sections/merchant_details/review
+Content-Type: application/json
+
+{
+  "decision": "approved",
+  "remarks": "GST and CIN details match"
+}
+
+### Admin verification - Approve/reject one document
+POST {{baseUrl}}/merchant-onboarding/admin/{{clientId}}/documents/{{documentId}}/review
+Content-Type: application/json
+
+{
+  "decision": "approved",
+  "remarks": "GST certificate is valid"
+}
+
+### Admin verification - Final approval
+POST {{baseUrl}}/merchant-onboarding/admin/{{clientId}}/approval
+Content-Type: application/json
+
+{
+  "decision": "approved",
+  "remarks": "All sections and documents verified"
+}
+
+### Merchant Onboarding - Start onboarding (with GST or without GST)
+POST {{baseUrl}}/merchant-onboarding/onboarding/start
+Content-Type: application/json
+
+{
+  "userId": "replace-with-logged-in-user-id",
+  "onboardingType": "with_gst"
+}
+
+### Merchant Onboarding - Get onboarding tab status (by user)
+GET {{baseUrl}}/merchant-onboarding/onboarding/status?userId=replace-with-user-id
+
+### Merchant Onboarding - Get onboarding tab status (by clientId)
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/onboarding/status
+
+### Merchant Onboarding - Merchant details form config (readonly + checkbox fields)
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/merchant-details/form-config
+
+### Merchant Onboarding - Submit merchant details tab
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/sections/merchant-details/submit
+Content-Type: application/json
+
+{
+  "selections": {
+    "businessActivity.natureOfBusiness": ["0"],
+    "businessActivity.hsnServices": ["998313", "998319"],
+    "addresses.companyAddresses": ["0", "1"]
+  }
+}
+
+### Merchant Onboarding - Submit directors tab
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/sections/directors/submit
+
+### Merchant Onboarding - Submit authorizers tab
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/sections/authorizers/submit
+
+### Merchant Onboarding - Submit bank details tab
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/sections/bank-details/submit
+
+### Merchant Onboarding - Submit video KYC tab
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/sections/video-kyc/submit
+
+### Video KYC - Initiate provider session (JWT merchant cookie)
+POST {{baseUrl}}/merchant-onboarding/vkyc/initiate
+Content-Type: application/json
+
+{
+  "personId": "replace-with-director-or-authorizer-id",
+  "type": "Director"
+}
+
+### Video KYC - List persons for logged-in merchant
+GET {{baseUrl}}/merchant-onboarding/vkyc-persons
+
+### Video KYC - Provider webhook (no JWT, HMAC x-signature)
+POST {{baseUrl}}/merchant-onboarding/webhooks/vkyc
+Content-Type: application/json
+x-signature: replace-with-hmac-sha256-hex
+
+{
+  "session_id": "replace-with-session-id",
+  "status": "confirmed",
+  "video_url": "https://videokyc-api.synra.in/videos/sample.mp4",
+  "face_video_url": "https://videokyc-api.synra.in/videos/face.mp4",
+  "ocr_data": {
+    "aadhaar_photo_url": "https://videokyc-api.synra.in/ocr/aadhaar.jpg",
+    "pan_photo_url": "https://videokyc-api.synra.in/ocr/pan.jpg"
+  },
+  "metadata": {}
+}
+
+### Admin Video KYC - List persons for a merchant
+GET {{baseUrl}}/merchant-onboarding/admin/{{clientId}}/vkyc-persons
+
+### Admin Video KYC - Approve director
+POST {{baseUrl}}/merchant-onboarding/admin/directors/{{directorId}}/approve
+Content-Type: application/json
+
+{
+  "type": "VKYC"
+}
+
+### Admin Video KYC - Reject director
+POST {{baseUrl}}/merchant-onboarding/admin/directors/{{directorId}}/reject
+Content-Type: application/json
+
+{
+  "type": "VKYC",
+  "reason": "Face does not match PAN photo"
+}
+
+### Admin Video KYC - Approve authorizer
+POST {{baseUrl}}/merchant-onboarding/admin/authorizers/{{authorizerId}}/approve
+Content-Type: application/json
+
+{
+  "type": "VKYC"
+}
+
+### Merchant Onboarding - Submit documents tab
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/sections/documents/submit
+
+### Merchant Onboarding - Complete onboarding (maker submit)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/onboarding/complete
+
 ### Merchant Onboarding - Add Merchant Details (GST → CIN → company profile)
 POST {{baseUrl}}/merchant-onboarding/addMerchantDetails
 Content-Type: application/json
 
 {
-  "gstNumber": "27AAKCT9792K2ZA"
+  "gstNumber": "27AAKCT9792K2ZA",
+  "userId": "replace-with-logged-in-merchant-user-id",
+  "mobile": "9876543211"
 }
 
 ### Merchant Onboarding - Get Merchant by clientId
@@ -97,6 +275,31 @@ Content-Type: application/json
 
 {}
 
+### Merchant Documents - List (latest per type)
+GET {{baseUrl}}/merchant-onboarding/{{clientId}}/documents
+
+### Merchant Documents - Upload (multipart: file + documentType)
+# documentType: GST | PAN | CIN | MOA | AOA | CANCEL_CHEQUE
+# Allowed: PDF, JPEG, JPG, PNG — max 2MB
+# VS Code REST Client: use "Send Request" on this block; pick a local file when prompted if supported,
+# or use curl:
+# curl -X POST "{{baseUrl}}/merchant-onboarding/YOUR_CLIENT_ID/documents/upload" \
+#   -F "documentType=GST" \
+#   -F "file=@/path/to/gst-certificate.pdf"
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/documents/upload
+Content-Type: multipart/form-data; boundary=----FelexeBoundary
+
+------FelexeBoundary
+Content-Disposition: form-data; name="documentType"
+
+GST
+------FelexeBoundary
+Content-Disposition: form-data; name="file"; filename="sample-gst.pdf"
+Content-Type: application/pdf
+
+< ./sample-gst.pdf
+------FelexeBoundary--
+
 ### Directors - List
 GET {{baseUrl}}/merchant-onboarding/{{clientId}}/directors
 
@@ -129,6 +332,20 @@ Content-Type: application/json
   "isVerified": true,
   "videoKycStatus": "completed"
 }
+
+### Directors - Upload Video KYC recording (multipart: file)
+# Allowed: WEBM, MP4, MOV, OGG — max 50MB
+# curl -X POST "{{baseUrl}}/merchant-onboarding/YOUR_CLIENT_ID/directors/YOUR_DIRECTOR_ID/video-kyc/upload" \
+#   -F "file=@/path/to/director-vkyc.webm"
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/directors/{{directorId}}/video-kyc/upload
+Content-Type: multipart/form-data; boundary=----FelexeVideoBoundary
+
+------FelexeVideoBoundary
+Content-Disposition: form-data; name="file"; filename="director-vkyc.webm"
+Content-Type: video/webm
+
+< ./director-vkyc.webm
+------FelexeVideoBoundary--
 
 ### Directors - Delete (POST soft-delete)
 POST {{baseUrl}}/merchant-onboarding/{{clientId}}/directors/{{directorId}}/delete
@@ -168,11 +385,36 @@ Content-Type: application/json
   "isVerified": true
 }
 
+### Authorizers - Upload Video KYC recording (multipart: file)
+# Allowed: WEBM, MP4, MOV, OGG — max 50MB
+# curl -X POST "{{baseUrl}}/merchant-onboarding/YOUR_CLIENT_ID/authorizers/YOUR_AUTHORIZER_ID/video-kyc/upload" \
+#   -F "file=@/path/to/authorizer-vkyc.webm"
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/authorizers/{{authorizerId}}/video-kyc/upload
+Content-Type: multipart/form-data; boundary=----FelexeVideoBoundary
+
+------FelexeVideoBoundary
+Content-Disposition: form-data; name="file"; filename="authorizer-vkyc.webm"
+Content-Type: video/webm
+
+< ./authorizer-vkyc.webm
+------FelexeVideoBoundary--
+
 ### Authorizers - Delete (POST soft-delete)
 POST {{baseUrl}}/merchant-onboarding/{{clientId}}/authorizers/{{authorizerId}}/delete
 Content-Type: application/json
 
 {}
+
+### Bank Details - Verify and save (stores full vendor response)
+POST {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details/verify
+Content-Type: application/json
+
+{
+  "accountNumber": "124601507875",
+  "ifscCode": "ICIC0001246",
+  "isPrimary": true,
+  "accountType": "savings"
+}
 
 ### Bank Details - List
 GET {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details
@@ -182,15 +424,32 @@ POST {{baseUrl}}/merchant-onboarding/{{clientId}}/bank-details
 Content-Type: application/json
 
 {
-  "accountNumber": "9876543210123",
-  "ifscCode": "HDFC0001234",
-  "bankName": "HDFC Bank",
-  "branchName": "Mumbai Main",
-  "accountHolderName": "SYNRA FINTEK PRIVATE LIMITED",
-  "accountType": "current",
+  "accountNumber": "124601507875",
+  "ifscCode": "ICIC0001246",
   "isPrimary": true,
-  "isVerified": false,
-  "verificationStatus": "pending"
+  "accountType": "savings",
+  "rawVerificationResponse": {
+    "status": "SUCCESS",
+    "status_code": "200",
+    "message": "Data fetch successfully",
+    "data": {
+      "account_number": "124601507875",
+      "beneficiary_name": "KETAN VINOD PATANGE",
+      "transaction_remark": "Transaction Successful",
+      "verification_status": "VERIFIED",
+      "is_penny_drop": true,
+      "ifscDetails": {
+        "ifsc": "ICIC0001246",
+        "name": "ICICI BANK LIMITED",
+        "branch": "MULUND W, MUMBAI",
+        "center": "GREATER BOMBAY",
+        "district": "MUMBAI",
+        "state": "MAHARASHTRA",
+        "address": "ICICI Bank Ltd., Shop No. 13, Alps Heights, Near Vishwamahal Hotel, Mulund W, Mumbai, Maharashtra.400080",
+        "contact": "919833988554"
+      }
+    }
+  }
 }
 
 ### Bank Details - Get by id
@@ -222,7 +481,8 @@ Content-Type: application/json
   "password": "{{tempPassword}}"
 }
 
-### Auth - Verify OTP (after login) -> returns verification_token + requires_password_update
+### Auth - Verify OTP (after login)
+### Sets HttpOnly cookies: verification_token (password change) OR access_token + refresh_token (login complete)
 POST {{baseUrl}}/auth/verify-otp
 Content-Type: application/json
 
@@ -233,14 +493,20 @@ Content-Type: application/json
 }
 
 ### Auth - Update password (first login / after OTP)
+### verification_token is read from HttpOnly cookie; body field is optional
 POST {{baseUrl}}/auth/update-password
 Content-Type: application/json
 
 {
   "mobile": "{{mobile}}",
-  "verification_token": "{{verificationToken}}",
   "new_password": "{{newPassword}}"
 }
+
+### Auth - Refresh access token (uses refresh_token cookie)
+POST {{baseUrl}}/auth/refresh
+
+### Auth - Logout (clears auth cookies)
+POST {{baseUrl}}/auth/logout
 
 ### Auth - Forgot password (send OTP to mobile)
 POST {{baseUrl}}/auth/forgot-password
@@ -266,7 +532,6 @@ Content-Type: application/json
 
 {
   "mobile": "{{mobile}}",
-  "verification_token": "{{verificationToken}}",
   "new_password": "Reset@Pass9"
 }
 
@@ -367,7 +632,7 @@ POST {{baseUrl}}/kyc-api-integration/verifyGST
 Content-Type: application/json
 
 {
-  "gstNumber": "08XXXXXXXX1DW"
+  "gstNumber": "27AAKCT9792K2ZA"
 }
 
 ### KYC - Verify bank account

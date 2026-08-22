@@ -24,6 +24,28 @@ export class MerchantOnboardingController {
     return this.merchantOnboardingService.sendInvite(body);
   }
 
+  @MessagePattern({ cmd: 'merchant-onboarding.getInvitedMerchantList' })
+  getInvitedMerchantList() {
+    return this.merchantOnboardingService.getInvitedMerchantList();
+  }
+
+  @MessagePattern({ cmd: 'merchant-onboarding.getOnboardedMerchantList' })
+  getOnboardedMerchantList() {
+    return this.merchantOnboardingService.getOnboardedMerchantList();
+  }
+
+  @MessagePattern({ cmd: 'merchant-onboarding.getCompletedMerchantList' })
+  getCompletedMerchantList() {
+    return this.merchantOnboardingService.getCompletedMerchantList();
+  }
+
+  @MessagePattern({ cmd: 'merchant-onboarding.invites.refreshByUserId' })
+  refreshInviteProgressByUserId(@Payload() payload: { userId: string }) {
+    return this.merchantOnboardingService.refreshInviteProgressByUserId(
+      payload.userId,
+    );
+  }
+
   @MessagePattern({ cmd: 'merchant-onboarding.addMerchantDetails' })
   addMerchantDetails(@Payload() body: AddMerchantDetailsDto) {
     return this.merchantOnboardingService.addMerchantDetails(body);

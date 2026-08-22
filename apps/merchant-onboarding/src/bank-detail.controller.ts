@@ -6,6 +6,7 @@ import {
   ClientIdResourcePayloadDto,
   CreateBankDetailPayloadDto,
   UpdateBankDetailPayloadDto,
+  VerifyBankDetailPayloadDto,
 } from './dto/payload.dto';
 
 @Controller()
@@ -20,6 +21,12 @@ export class BankDetailController {
   @MessagePattern({ cmd: 'merchant-onboarding.bankDetails.get' })
   get(@Payload() payload: ClientIdResourcePayloadDto) {
     return this.bankDetailCrudService.get(payload.clientId, payload.id);
+  }
+
+  @MessagePattern({ cmd: 'merchant-onboarding.bankDetails.verify' })
+  verify(@Payload() payload: VerifyBankDetailPayloadDto) {
+    const { clientId, ...body } = payload;
+    return this.bankDetailCrudService.verifyAndCreate(clientId, body);
   }
 
   @MessagePattern({ cmd: 'merchant-onboarding.bankDetails.create' })

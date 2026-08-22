@@ -6,6 +6,7 @@ import {
   ClientIdResourcePayloadDto,
   CreateAuthorizerPayloadDto,
   UpdateAuthorizerPayloadDto,
+  UploadVideoKycPayloadDto,
 } from './dto/payload.dto';
 
 @Controller()
@@ -32,6 +33,15 @@ export class AuthorizerController {
   update(@Payload() payload: UpdateAuthorizerPayloadDto) {
     const { clientId, id, ...body } = payload;
     return this.authorizerCrudService.update(clientId, id, body);
+  }
+
+  @MessagePattern({ cmd: 'merchant-onboarding.authorizers.videoKyc.upload' })
+  uploadVideoKyc(@Payload() payload: UploadVideoKycPayloadDto) {
+    return this.authorizerCrudService.saveVideoKyc(
+      payload.clientId,
+      payload.id,
+      payload.videoKycUrl,
+    );
   }
 
   @MessagePattern({ cmd: 'merchant-onboarding.authorizers.delete' })

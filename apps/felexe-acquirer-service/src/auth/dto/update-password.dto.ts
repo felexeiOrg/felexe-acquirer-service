@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 export class UpdatePasswordDto {
   @IsString()
@@ -6,9 +6,10 @@ export class UpdatePasswordDto {
   @Matches(/^\d{10}$/, { message: 'mobile must be exactly 10 digits' })
   mobile: string;
 
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  verification_token: string;
+  verification_token?: string;
 
   @IsString()
   @IsNotEmpty()

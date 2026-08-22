@@ -31,6 +31,15 @@ export class BankDetail {
   @Column({ name: 'account_holder_name', type: 'varchar', nullable: true })
   account_holder_name: string | null;
 
+  @Column({ name: 'transaction_remark', type: 'varchar', nullable: true })
+  transaction_remark: string | null;
+
+  @Column({ name: 'is_penny_drop', type: 'boolean', nullable: true })
+  is_penny_drop: boolean | null;
+
+  @Column({ name: 'ifsc_details', type: 'jsonb', nullable: true })
+  ifsc_details: Record<string, unknown> | null;
+
   @Column({ name: 'account_type', type: 'varchar', nullable: true })
   account_type: string | null;
 

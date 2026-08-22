@@ -14,8 +14,8 @@ export class Merchant {
   @Column({ name: 'client_id', type: 'uuid', unique: true })
   client_id: string;
 
-  @Column({ name: 'gstin', type: 'varchar', unique: true })
-  gstin: string;
+  @Column({ name: 'gstin', type: 'varchar', unique: true, nullable: true })
+  gstin: string | null;
 
   @Column({ name: 'cin', type: 'varchar', nullable: true })
   cin: string | null;
@@ -47,6 +47,12 @@ export class Merchant {
 
   @Column({ name: 'raw_company_response', type: 'jsonb', nullable: true })
   raw_company_response: Record<string, unknown> | null;
+
+  @Column({ name: 'onboarding_type', type: 'varchar', nullable: true })
+  onboarding_type: string | null;
+
+  @Column({ name: 'selected_merchant_profile', type: 'jsonb', nullable: true })
+  selected_merchant_profile: Record<string, unknown> | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   created_at: Date;

@@ -67,6 +67,10 @@ export class UpdatePersonDto {
 
   @IsOptional()
   @IsString()
+  videoKycUrl?: string | null;
+
+  @IsOptional()
+  @IsString()
   videoKycStatus?: string | null;
 
   @IsOptional()

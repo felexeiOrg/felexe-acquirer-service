@@ -43,11 +43,39 @@ export class AuthorizedSignatory {
   @Column({ name: 'is_verified', type: 'boolean', default: false })
   is_verified: boolean;
 
+  @Column({ name: 'rejection_reason', type: 'text', nullable: true })
+  rejection_reason: string | null;
+
+  @Index()
+  @Column({ name: 'session_id', type: 'varchar', nullable: true })
+  session_id: string | null;
+
+  @Column({ name: 'video_kyc_url', type: 'varchar', nullable: true })
+  video_kyc_url: string | null;
+
+  @Column({ name: 'face_video_url', type: 'varchar', nullable: true })
+  face_video_url: string | null;
+
+  @Column({ name: 'aadhaar_photo_url', type: 'varchar', nullable: true })
+  aadhaar_photo_url: string | null;
+
+  @Column({ name: 'pan_photo_url', type: 'varchar', nullable: true })
+  pan_photo_url: string | null;
+
   @Column({ name: 'video_kyc_status', type: 'varchar', nullable: true })
   video_kyc_status: string | null;
 
+  @Column({ name: 'video_kyc_response', type: 'jsonb', nullable: true })
+  video_kyc_response: Record<string, unknown> | null;
+
+  @Column({ name: 'video_kyc_metadata', type: 'jsonb', nullable: true })
+  video_kyc_metadata: Record<string, unknown> | null;
+
   @Column({ name: 'is_vkyc_verified', type: 'boolean', default: false })
   is_vkyc_verified: boolean;
+
+  @Column({ name: 'vkyc_rejection_reason', type: 'text', nullable: true })
+  vkyc_rejection_reason: string | null;
 
   @Column({ name: 'status', type: 'varchar', default: 'active' })
   status: string;

@@ -1,5 +1,9 @@
-import { IsUUID } from 'class-validator';
-import { CreateBankDetailDto, UpdateBankDetailDto } from './bank-detail.dto';
+import { IsString, IsUUID } from 'class-validator';
+import {
+  CreateBankDetailDto,
+  UpdateBankDetailDto,
+  VerifyBankDetailDto,
+} from './bank-detail.dto';
 import { CreatePersonDto, UpdatePersonDto } from './person.dto';
 import { UpdateMerchantDto } from './update-merchant.dto';
 
@@ -44,7 +48,17 @@ export class UpdateAuthorizerPayloadDto extends UpdatePersonDto {
   id: string;
 }
 
+export class UploadVideoKycPayloadDto extends ClientIdResourcePayloadDto {
+  @IsString()
+  videoKycUrl: string;
+}
+
 export class CreateBankDetailPayloadDto extends CreateBankDetailDto {
+  @IsUUID('4', { message: 'clientId must be a valid UUID' })
+  clientId: string;
+}
+
+export class VerifyBankDetailPayloadDto extends VerifyBankDetailDto {
   @IsUUID('4', { message: 'clientId must be a valid UUID' })
   clientId: string;
 }

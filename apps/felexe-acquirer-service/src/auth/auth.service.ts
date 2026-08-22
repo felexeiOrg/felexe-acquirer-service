@@ -1,13 +1,17 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, randomInt } from 'crypto';
+import { firstValueFrom } from 'rxjs';
 import { MoreThan, Repository } from 'typeorm';
 import { AuditService } from './audit.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,9 +25,15 @@ import { AuditEvent } from './enums/audit-event.enum';
 import { OtpPurpose } from './enums/otp-purpose.enum';
 import { UserRole } from './enums/user-role.enum';
 import { OtpCleanupService } from './otp-cleanup.service';
+import { TokenService } from './token.service';
+import {
+  AuthSessionTokens,
+  toPublicUserProfile,
+} from './interfaces/auth-session.interface';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly otpTtlMinutes = 10;
   private readonly tokenTtlMinutes = 15;
 
@@ -35,6 +45,9 @@ export class AuthService {
     private readonly auditService: AuditService,
     private readonly otpCleanupService: OtpCleanupService,
     private readonly configService: ConfigService,
+    private readonly tokenService: TokenService,
+    @Inject('MERCHANT_ONBOARDING_SERVICE')
+    private readonly merchantOnboardingClient: ClientProxy,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
@@ -374,27 +387,42 @@ export class AuthService {
       });
     }
 
+    let session: AuthSessionTokens | undefined;
+
+    if (!requiresPasswordUpdate && verifyOtpDto.purpose === OtpPurpose.LOGIN) {
+      session = await this.tokenService.createSession(user);
+    }
+
+    if (session) {
+      if (user.role === UserRole.MERCHANT) {
+        this.refreshMerchantInviteProgress(user.id);
+      }
+
+      return {
+        ...this.tokenService.buildLoginSuccessResponse(user, session),
+        requires_password_update: false,
+        purpose: verifyOtpDto.purpose,
+        mobile: user.mobile,
+        session,
+      };
+    }
+
     return {
       message: requiresPasswordUpdate
         ? 'OTP verified. Please update your password'
         : 'OTP verified successfully',
       requires_password_update: requiresPasswordUpdate,
-      verification_token: verificationToken,
       purpose: verifyOtpDto.purpose,
       mobile: user.mobile,
-      user: {
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        role: user.role,
-        is_active: user.is_active,
-        must_change_password: user.must_change_password,
-      },
+      user: toPublicUserProfile(user),
+      verificationToken: requiresPasswordUpdate ? verificationToken : undefined,
     };
   }
 
-  async updatePassword(updatePasswordDto: UpdatePasswordDto) {
+  async updatePassword(
+    updatePasswordDto: UpdatePasswordDto,
+    verificationToken: string,
+  ) {
     await this.otpCleanupService.deleteExpiredOtps(updatePasswordDto.mobile);
 
     const user = await this.userRepository.findOne({
@@ -423,7 +451,7 @@ export class AuthService {
     }
 
     const isTokenValid = await bcrypt.compare(
-      updatePasswordDto.verification_token,
+      verificationToken,
       otpRecord.verification_token_hash,
     );
 
@@ -496,12 +524,37 @@ export class AuthService {
       },
     });
 
+    const session = await this.tokenService.createSession(user);
+
+    if (user.role === UserRole.MERCHANT) {
+      this.refreshMerchantInviteProgress(user.id);
+    }
+
     return {
+      ...this.tokenService.buildLoginSuccessResponse(user, session),
       message: 'Password updated successfully',
-      is_active: user.is_active,
-      must_change_password: user.must_change_password,
-      password_change_count: user.password_change_count,
-      password_changed_at: user.password_changed_at,
+      session,
+    };
+  }
+
+  async refreshSession(refreshToken: string) {
+    const { session, user } =
+      await this.tokenService.refreshSession(refreshToken);
+
+    return {
+      ...this.tokenService.buildLoginSuccessResponse(user, session),
+      message: 'Token refreshed successfully',
+      session,
+    };
+  }
+
+  async logout(refreshToken?: string) {
+    if (refreshToken) {
+      await this.tokenService.revokeRefreshToken(refreshToken);
+    }
+
+    return {
+      message: 'Logged out successfully',
     };
   }
 
@@ -551,6 +604,12 @@ export class AuthService {
       this.configService.get<string>('NODE_ENV', 'development') !==
       'production';
 
+    if (isDev) {
+      this.logger.log(
+        `[DEV] OTP for mobile=${user.mobile} purpose=${purpose}: ${otp} (expires in ${this.otpTtlMinutes} min)`,
+      );
+    }
+
     return isDev
       ? { dev_otp: otp, otp_expires_at: expiresAt.toISOString() }
       : { otp_expires_at: expiresAt.toISOString() };
@@ -574,5 +633,48 @@ export class AuthService {
 
   private generateToken(): string {
     return randomBytes(32).toString('hex');
+  }
+
+  private refreshMerchantInviteProgress(userId: string): void {
+    firstValueFrom(
+      this.merchantOnboardingClient.send(
+        { cmd: 'merchant-onboarding.invites.refreshByUserId' },
+        { userId },
+      ),
+      { defaultValue: { refreshed: false } },
+    ).catch((error: unknown) => {
+      this.logger.warn(
+        `Failed to refresh merchant invite progress for userId=${userId}: ${this.formatUnknownError(error)}`,
+      );
+    });
+  }
+
+  private formatUnknownError(error: unknown): string {
+    if (error instanceof Error && error.message) {
+      return error.message;
+    }
+
+    if (typeof error === 'string' && error) {
+      return error;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const record = error as { message?: unknown; code?: unknown };
+      const message = typeof record.message === 'string' ? record.message : '';
+      const code = typeof record.code === 'string' ? record.code : '';
+      const details = [code, message].filter(Boolean).join(' ');
+
+      if (details) {
+        return details;
+      }
+
+      try {
+        return JSON.stringify(error);
+      } catch {
+        return 'unknown error';
+      }
+    }
+
+    return 'unknown error';
   }
 }

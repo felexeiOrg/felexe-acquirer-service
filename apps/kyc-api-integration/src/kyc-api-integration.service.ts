@@ -63,7 +63,7 @@ export class KycApiIntegrationService {
     };
 
     return this.callRpacpc({
-      servicePath: '/services/id019',
+      servicePath: '/services/id001',
       event: 'PAN_VERIFY',
       action: 'VERIFY',
       resource: 'pan',

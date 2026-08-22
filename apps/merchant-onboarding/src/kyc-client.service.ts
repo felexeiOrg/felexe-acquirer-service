@@ -37,6 +37,16 @@ export class KycClientService {
     });
   }
 
+  async verifyBankAccount(
+    accNumber: string,
+    ifscNumber: string,
+  ): Promise<Record<string, unknown>> {
+    return this.postKyc('verifyBankAccount', {
+      acc_number: accNumber,
+      ifsc_number: ifscNumber,
+    });
+  }
+
   private async postKyc(
     path: string,
     body: Record<string, unknown>,

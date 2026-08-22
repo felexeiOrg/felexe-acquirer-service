@@ -14,6 +14,28 @@ import {
   VALIDATION_MESSAGES,
 } from '../common/validation/validation-patterns.constants';
 
+export class VerifyBankDetailDto {
+  @IsString()
+  @IsNotEmpty({ message: 'accountNumber should not be empty' })
+  @Transform(({ value }) => String(value ?? '').trim())
+  @Matches(BANK_ACCOUNT_REGEX, { message: VALIDATION_MESSAGES.accountNumber })
+  accountNumber: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'ifscCode should not be empty' })
+  @Transform(({ value }) => String(value ?? '').trim().toUpperCase())
+  @Matches(IFSC_REGEX, { message: VALIDATION_MESSAGES.ifscCode })
+  ifscCode: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPrimary?: boolean;
+
+  @IsOptional()
+  @IsString()
+  accountType?: string | null;
+}
+
 export class CreateBankDetailDto {
   @IsString()
   @IsNotEmpty({ message: 'accountNumber should not be empty' })
@@ -38,6 +60,22 @@ export class CreateBankDetailDto {
   @IsOptional()
   @IsString()
   accountHolderName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  beneficiaryName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  transactionRemark?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  isPennyDrop?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  ifscDetails?: Record<string, unknown> | null;
 
   @IsOptional()
   @IsString()
@@ -96,6 +134,22 @@ export class UpdateBankDetailDto {
   @IsOptional()
   @IsString()
   accountHolderName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  beneficiaryName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  transactionRemark?: string | null;
+
+  @IsOptional()
+  @IsBoolean()
+  isPennyDrop?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  ifscDetails?: Record<string, unknown> | null;
 
   @IsOptional()
   @IsString()

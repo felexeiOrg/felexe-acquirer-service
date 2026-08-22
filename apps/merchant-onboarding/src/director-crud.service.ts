@@ -7,9 +7,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditService } from './audit.service';
 import { MerchantAuditEvent } from './constants/audit-event.constants';
+import { VIDEO_KYC_COMPLETED_STATUS } from './constants/merchant-invite-status.constants';
 import { CreatePersonDto, UpdatePersonDto } from './dto/person.dto';
 import { Director } from './entities/director.entity';
 import { MerchantContextService } from './merchant-context.service';
+import { MerchantInviteService } from './merchant-invite.service';
 import {
   applyPersonUpdate,
   fromCreatePersonDto,
@@ -20,6 +22,7 @@ import {
 export class DirectorCrudService {
   constructor(
     private readonly merchantContextService: MerchantContextService,
+    private readonly merchantInviteService: MerchantInviteService,
     private readonly auditService: AuditService,
     @InjectRepository(Director)
     private readonly directorRepository: Repository<Director>,
@@ -58,6 +61,8 @@ export class DirectorCrudService {
       metadata: { client_id: clientId },
     });
 
+    await this.merchantInviteService.refreshProgress(clientId);
+
     return {
       message: 'Director created successfully',
       director: toPersonResponse(saved),
@@ -87,8 +92,40 @@ export class DirectorCrudService {
       metadata: { client_id: clientId },
     });
 
+    await this.merchantInviteService.refreshProgress(clientId);
+
     return {
       message: 'Director updated successfully',
+      director: toPersonResponse(saved),
+    };
+  }
+
+  async saveVideoKyc(clientId: string, id: string, videoKycUrl: string) {
+    await this.merchantContextService.assertMerchantActive(clientId);
+    const director = await this.findActiveDirector(clientId, id);
+
+    director.video_kyc_url = videoKycUrl;
+    director.video_kyc_status = VIDEO_KYC_COMPLETED_STATUS;
+    director.is_vkyc_verified = true;
+
+    const saved = await this.directorRepository.save(director);
+
+    await this.auditService.log({
+      event: MerchantAuditEvent.DIRECTOR_VIDEO_KYC_UPLOADED,
+      action: 'UPDATE',
+      resource: 'directors',
+      description: `Director video KYC uploaded: ${saved.full_name ?? saved.din ?? saved.id}`,
+      targetId: saved.id,
+      name: saved.full_name,
+      changedFields: ['video_kyc_url', 'video_kyc_status', 'is_vkyc_verified'],
+      newValues: toPersonResponse(saved),
+      metadata: { client_id: clientId },
+    });
+
+    await this.merchantInviteService.refreshProgress(clientId);
+
+    return {
+      message: 'Director video KYC uploaded successfully',
       director: toPersonResponse(saved),
     };
   }
@@ -111,6 +148,8 @@ export class DirectorCrudService {
       newValues: { status: 'deleted' },
       metadata: { client_id: clientId },
     });
+
+    await this.merchantInviteService.refreshProgress(clientId);
 
     return {
       message: 'Director deleted successfully',

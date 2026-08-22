@@ -44,6 +44,10 @@ export class CreatePersonDto {
 
   @IsOptional()
   @IsString()
+  videoKycUrl?: string | null;
+
+  @IsOptional()
+  @IsString()
   videoKycStatus?: string | null;
 
   @IsOptional()
@@ -91,6 +95,10 @@ export class UpdatePersonDto {
   @IsOptional()
   @IsBoolean()
   isVerified?: boolean;
+
+  @IsOptional()
+  @IsString()
+  videoKycUrl?: string | null;
 
   @IsOptional()
   @IsString()

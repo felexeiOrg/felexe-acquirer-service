@@ -7,9 +7,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditService } from './audit.service';
 import { MerchantAuditEvent } from './constants/audit-event.constants';
+import { VIDEO_KYC_COMPLETED_STATUS } from './constants/merchant-invite-status.constants';
 import { CreatePersonDto, UpdatePersonDto } from './dto/person.dto';
 import { AuthorizedSignatory } from './entities/authorized-signatory.entity';
 import { MerchantContextService } from './merchant-context.service';
+import { MerchantInviteService } from './merchant-invite.service';
 import {
   applyPersonUpdate,
   fromCreatePersonDto,
@@ -20,6 +22,7 @@ import {
 export class AuthorizerCrudService {
   constructor(
     private readonly merchantContextService: MerchantContextService,
+    private readonly merchantInviteService: MerchantInviteService,
     private readonly auditService: AuditService,
     @InjectRepository(AuthorizedSignatory)
     private readonly authorizerRepository: Repository<AuthorizedSignatory>,
@@ -58,6 +61,8 @@ export class AuthorizerCrudService {
       metadata: { client_id: clientId },
     });
 
+    await this.merchantInviteService.refreshProgress(clientId);
+
     return {
       message: 'Authorizer created successfully',
       authorizer: toPersonResponse(saved),
@@ -87,8 +92,40 @@ export class AuthorizerCrudService {
       metadata: { client_id: clientId },
     });
 
+    await this.merchantInviteService.refreshProgress(clientId);
+
     return {
       message: 'Authorizer updated successfully',
+      authorizer: toPersonResponse(saved),
+    };
+  }
+
+  async saveVideoKyc(clientId: string, id: string, videoKycUrl: string) {
+    await this.merchantContextService.assertMerchantActive(clientId);
+    const authorizer = await this.findActiveAuthorizer(clientId, id);
+
+    authorizer.video_kyc_url = videoKycUrl;
+    authorizer.video_kyc_status = VIDEO_KYC_COMPLETED_STATUS;
+    authorizer.is_vkyc_verified = true;
+
+    const saved = await this.authorizerRepository.save(authorizer);
+
+    await this.auditService.log({
+      event: MerchantAuditEvent.AUTHORIZER_VIDEO_KYC_UPLOADED,
+      action: 'UPDATE',
+      resource: 'authorized_signatory_details',
+      description: `Authorizer video KYC uploaded: ${saved.full_name ?? saved.din ?? saved.id}`,
+      targetId: saved.id,
+      name: saved.full_name,
+      changedFields: ['video_kyc_url', 'video_kyc_status', 'is_vkyc_verified'],
+      newValues: toPersonResponse(saved),
+      metadata: { client_id: clientId },
+    });
+
+    await this.merchantInviteService.refreshProgress(clientId);
+
+    return {
+      message: 'Authorizer video KYC uploaded successfully',
       authorizer: toPersonResponse(saved),
     };
   }
@@ -111,6 +148,8 @@ export class AuthorizerCrudService {
       newValues: { status: 'deleted' },
       metadata: { client_id: clientId },
     });
+
+    await this.merchantInviteService.refreshProgress(clientId);
 
     return {
       message: 'Authorizer deleted successfully',

@@ -15,8 +15,17 @@ export function toPersonResponse(person: Director | AuthorizedSignatory) {
     dateOfAppointment: person.date_of_appointment,
     disqualified: person.disqualified,
     isVerified: person.is_verified,
+    rejectionReason: person.rejection_reason,
+    sessionId: person.session_id,
+    videoKycUrl: person.video_kyc_url,
+    faceVideoUrl: person.face_video_url,
+    aadhaarPhotoUrl: person.aadhaar_photo_url,
+    panPhotoUrl: person.pan_photo_url,
     videoKycStatus: person.video_kyc_status,
+    videoKycResponse: person.video_kyc_response,
+    videoKycMetadata: person.video_kyc_metadata,
     isVkycVerified: person.is_vkyc_verified,
+    vkycRejectionReason: person.vkyc_rejection_reason,
     status: person.status,
     createdAt: person.created_at,
     updatedAt: person.updated_at,
@@ -38,6 +47,7 @@ export function fromCreatePersonDto(
     date_of_appointment: body.dateOfAppointment ?? null,
     disqualified: body.disqualified ?? false,
     is_verified: body.isVerified ?? false,
+    video_kyc_url: body.videoKycUrl ?? null,
     video_kyc_status: body.videoKycStatus ?? null,
     is_vkyc_verified: body.isVkycVerified ?? false,
     status: body.status ?? 'active',
@@ -85,6 +95,10 @@ export function applyPersonUpdate(
   if (body.isVerified !== undefined) {
     person.is_verified = body.isVerified;
     changedFields.push('is_verified');
+  }
+  if (body.videoKycUrl !== undefined) {
+    person.video_kyc_url = body.videoKycUrl;
+    changedFields.push('video_kyc_url');
   }
   if (body.videoKycStatus !== undefined) {
     person.video_kyc_status = body.videoKycStatus;

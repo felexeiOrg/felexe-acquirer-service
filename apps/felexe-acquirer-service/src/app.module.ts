@@ -7,9 +7,13 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { AuditLog } from './auth/entities/audit-log.entity';
 import { OtpVerification } from './auth/entities/otp-verification.entity';
+import { RefreshToken } from './auth/entities/refresh-token.entity';
 import { User } from './auth/entities/user.entity';
+import { MerchantCharge } from './charge-mng/entities/merchant-charge.entity';
+import { MerchantChargeSlab } from './charge-mng/entities/merchant-charge-slab.entity';
 import { KycApiIntegrationModule } from './kyc-api-integration/kyc-api-integration.module';
 import { MerchantOnboardingModule } from './merchant-onboarding/merchant-onboarding.module';
+import { ChargeMngModule } from './charge-mng/charge-mng.module';
 
 function resolveHost(
   configService: ConfigService,
@@ -39,7 +43,14 @@ function resolveHost(
         username: configService.getOrThrow<string>('DB_USER'),
         password: configService.getOrThrow<string>('DB_PASSWORD'),
         database: configService.getOrThrow<string>('DB_NAME'),
-        entities: [User, OtpVerification, AuditLog],
+        entities: [
+          User,
+          OtpVerification,
+          AuditLog,
+          RefreshToken,
+          MerchantCharge,
+          MerchantChargeSlab,
+        ],
         synchronize: true,
       }),
     }),
@@ -120,6 +131,7 @@ function resolveHost(
     AuthModule,
     KycApiIntegrationModule,
     MerchantOnboardingModule,
+    ChargeMngModule,
   ],
   controllers: [AppController],
   providers: [AppService],

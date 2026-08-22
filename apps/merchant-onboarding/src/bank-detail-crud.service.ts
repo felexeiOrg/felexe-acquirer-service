@@ -10,9 +10,12 @@ import { MerchantAuditEvent } from './constants/audit-event.constants';
 import {
   CreateBankDetailDto,
   UpdateBankDetailDto,
+  VerifyBankDetailDto,
 } from './dto/bank-detail.dto';
 import { BankDetail } from './entities/bank-detail.entity';
+import { KycClientService } from './kyc-client.service';
 import { MerchantContextService } from './merchant-context.service';
+import { MerchantInviteService } from './merchant-invite.service';
 import {
   applyBankDetailUpdate,
   fromCreateBankDetailDto,
@@ -23,6 +26,8 @@ import {
 export class BankDetailCrudService {
   constructor(
     private readonly merchantContextService: MerchantContextService,
+    private readonly merchantInviteService: MerchantInviteService,
+    private readonly kycClientService: KycClientService,
     private readonly auditService: AuditService,
     @InjectRepository(BankDetail)
     private readonly bankDetailRepository: Repository<BankDetail>,
@@ -42,6 +47,28 @@ export class BankDetailCrudService {
     return toBankDetailResponse(bank);
   }
 
+  async verifyAndCreate(clientId: string, body: VerifyBankDetailDto) {
+    await this.merchantContextService.assertMerchantActive(clientId);
+
+    const verificationResponse = await this.kycClientService.verifyBankAccount(
+      body.accountNumber,
+      body.ifscCode,
+    );
+
+    const created = await this.create(clientId, {
+      accountNumber: body.accountNumber,
+      ifscCode: body.ifscCode,
+      isPrimary: body.isPrimary,
+      accountType: body.accountType,
+      rawVerificationResponse: verificationResponse,
+    });
+
+    return {
+      ...created,
+      verificationResponse,
+    };
+  }
+
   async create(clientId: string, body: CreateBankDetailDto) {
     await this.merchantContextService.assertMerchantActive(clientId);
     const bank = this.bankDetailRepository.create(
@@ -59,6 +86,8 @@ export class BankDetailCrudService {
       newValues: toBankDetailResponse(saved),
       metadata: { client_id: clientId },
     });
+
+    await this.merchantInviteService.refreshProgress(clientId);
 
     return {
       message: 'Bank detail created successfully',
@@ -88,6 +117,8 @@ export class BankDetailCrudService {
       metadata: { client_id: clientId },
     });
 
+    await this.merchantInviteService.refreshProgress(clientId);
+
     return {
       message: 'Bank detail updated successfully',
       bankDetail: toBankDetailResponse(saved),
@@ -111,6 +142,8 @@ export class BankDetailCrudService {
       newValues: { status: 'deleted' },
       metadata: { client_id: clientId },
     });
+
+    await this.merchantInviteService.refreshProgress(clientId);
 
     return {
       message: 'Bank detail deleted successfully',

@@ -3,6 +3,7 @@ import { ClientIdPipe, ResourceIdPipe } from '../common/pipes/uuid-param.pipe';
 import {
   CreateBankDetailDto,
   UpdateBankDetailDto,
+  VerifyBankDetailDto,
 } from './dto/bank-detail.dto';
 import { MerchantOnboardingService } from './merchant-onboarding.service';
 
@@ -23,6 +24,14 @@ export class BankDetailController {
     @Param('id', ResourceIdPipe) id: string,
   ) {
     return this.merchantOnboardingService.getBankDetail(clientId, id);
+  }
+
+  @Post('verify')
+  verifyBankDetail(
+    @Param('clientId', ClientIdPipe) clientId: string,
+    @Body() body: VerifyBankDetailDto,
+  ) {
+    return this.merchantOnboardingService.verifyBankDetail(clientId, body);
   }
 
   @Post()
