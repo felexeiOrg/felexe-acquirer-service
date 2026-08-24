@@ -643,3 +643,17 @@ Content-Type: application/json
   "acc_number": "9XXXXXXXXXXXXX77",
   "ifsc_number": "UTIXXXXXX794"
 }
+
+### Merchant governance - Crawl website (admin). Start: nest start merchant-governace-service --watch
+POST {{baseUrl}}/merchant-governance-svc/websiteCrawl/{{clientId}}
+Content-Type: application/json
+
+{
+  "websiteUrl": "https://synra.in"
+}
+
+### Merchant governance - Latest crawl status
+GET {{baseUrl}}/merchant-governance-svc/getWebsiteStatus/{{clientId}}
+
+### Merchant governance - Status with history
+GET {{baseUrl}}/merchant-governance-svc/getWebsiteStatus/{{clientId}}?includeHistory=true

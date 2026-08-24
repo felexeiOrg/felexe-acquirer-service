@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { createValidationPipe } from './common/validation/create-validation-pipe';
 import { MerchantGovernaceServiceModule } from './merchant-governace-service.module';
 
 async function bootstrap() {
@@ -26,6 +27,8 @@ async function bootstrap() {
         },
       },
     );
+
+  microservice.useGlobalPipes(createValidationPipe());
 
   await microservice.listen();
   console.log(

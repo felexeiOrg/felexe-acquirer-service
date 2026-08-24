@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { MerchantComplianceSnapshot } from './entities/merchant-compliance-snapshot.entity';
+import { WebsiteCrawlLog } from './entities/website-crawl-log.entity';
 import { MerchantGovernaceServiceController } from './merchant-governace-service.controller';
 import { MerchantGovernaceServiceService } from './merchant-governace-service.service';
+import { WebsiteCrawlService } from './website-crawl.service';
 
 @Module({
   imports: [
@@ -24,8 +27,9 @@ import { MerchantGovernaceServiceService } from './merchant-governace-service.se
         synchronize: true,
       }),
     }),
+    TypeOrmModule.forFeature([WebsiteCrawlLog, MerchantComplianceSnapshot]),
   ],
   controllers: [MerchantGovernaceServiceController],
-  providers: [MerchantGovernaceServiceService],
+  providers: [MerchantGovernaceServiceService, WebsiteCrawlService],
 })
 export class MerchantGovernaceServiceModule {}

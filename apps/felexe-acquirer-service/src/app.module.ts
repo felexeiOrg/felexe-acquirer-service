@@ -14,6 +14,7 @@ import { MerchantChargeSlab } from './charge-mng/entities/merchant-charge-slab.e
 import { KycApiIntegrationModule } from './kyc-api-integration/kyc-api-integration.module';
 import { MerchantOnboardingModule } from './merchant-onboarding/merchant-onboarding.module';
 import { ChargeMngModule } from './charge-mng/charge-mng.module';
+import { MerchantGovernanceSvcModule } from './merchant-governance-svc/merchant-governance-svc.module';
 
 function resolveHost(
   configService: ConfigService,
@@ -132,6 +133,7 @@ function resolveHost(
     KycApiIntegrationModule,
     MerchantOnboardingModule,
     ChargeMngModule,
+    MerchantGovernanceSvcModule, // website crawl + status routes
   ],
   controllers: [AppController],
   providers: [AppService],
